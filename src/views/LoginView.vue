@@ -9,11 +9,28 @@ const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 
+const demoAccounts = [
+  { username: 'student01', role: 'student' as UserRole, label: '学生账号' },
+  { username: 'teacher01', role: 'teacher' as UserRole, label: '教师账号' },
+  { username: 'admin01', role: 'admin' as UserRole, label: '管理员账号' },
+]
+
 const form = reactive({
   username: 'student01',
   password: '123456',
   role: 'student' as UserRole,
 })
+
+function fillDemoAccount(role: UserRole) {
+  const account = demoAccounts.find((item) => item.role === role)
+  if (!account) {
+    return
+  }
+
+  form.username = account.username
+  form.role = account.role
+  form.password = '123456'
+}
 
 async function handleLogin() {
   loading.value = true
@@ -40,7 +57,18 @@ async function handleLogin() {
     <section class="login-card oj-panel">
       <div class="card-header">
         <h2>登录系统</h2>
-        <p>默认演示账号已自动填充</p>
+        <p>可直接切换三套 mock 账号查看不同角色面板</p>
+      </div>
+
+      <div class="demo-account-list">
+        <el-button
+          v-for="account in demoAccounts"
+          :key="account.role"
+          plain
+          @click="fillDemoAccount(account.role)"
+        >
+          {{ account.label }}
+        </el-button>
       </div>
 
       <el-form label-position="top" @submit.prevent="handleLogin">
@@ -131,6 +159,13 @@ async function handleLogin() {
 .submit-btn {
   width: 100%;
   margin-top: 10px;
+}
+
+.demo-account-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0 8px;
 }
 
 @media (max-width: 960px) {

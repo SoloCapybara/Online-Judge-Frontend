@@ -6,25 +6,31 @@ import {
   Medal,
   Monitor,
   SwitchButton,
+  Tickets,
   UserFilled,
 } from '@element-plus/icons-vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '../stores/user'
+import { useUserStore, type UserRole } from '../stores/user'
 
-type MenuKey = '/' | '/problems' | '/contests' | '/status' | '/admin'
+type MenuKey = '/' | '/problems' | '/contests' | '/status' | '/teacher' | '/admin'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const menuItems = [
-  { key: '/', label: '控制台', icon: House },
-  { key: '/problems', label: '题库', icon: Files },
-  { key: '/contests', label: '比赛', icon: Medal },
-  { key: '/status', label: '评测状态', icon: DataLine },
-  { key: '/admin', label: '管理台', icon: Monitor },
+  { key: '/', label: '控制台', icon: House, roles: ['student', 'teacher', 'admin'] as UserRole[] },
+  { key: '/problems', label: '题库', icon: Files, roles: ['student', 'teacher'] as UserRole[] },
+  { key: '/contests', label: '比赛', icon: Medal, roles: ['student', 'teacher'] as UserRole[] },
+  { key: '/status', label: '评测状态', icon: DataLine, roles: ['student', 'teacher', 'admin'] as UserRole[] },
+  { key: '/teacher', label: '教师工作台', icon: Tickets, roles: ['teacher'] as UserRole[] },
+  { key: '/admin', label: '管理台', icon: Monitor, roles: ['admin'] as UserRole[] },
 ]
+
+const visibleMenuItems = computed(() =>
+  menuItems.filter((item) => item.roles.includes(userStore.role)),
+)
 
 const activeMenu = computed<MenuKey>(() => {
   if (route.path.startsWith('/problems')) {
@@ -35,6 +41,9 @@ const activeMenu = computed<MenuKey>(() => {
   }
   if (route.path.startsWith('/status')) {
     return '/status'
+  }
+  if (route.path.startsWith('/teacher')) {
+    return '/teacher'
   }
   if (route.path.startsWith('/admin')) {
     return '/admin'
@@ -68,7 +77,7 @@ function handleLogout() {
         class="menu"
         @select="handleMenuSelect"
       >
-        <el-menu-item v-for="item in menuItems" :key="item.key" :index="item.key">
+        <el-menu-item v-for="item in visibleMenuItems" :key="item.key" :index="item.key">
           <el-icon><component :is="item.icon" /></el-icon>
           <span>{{ item.label }}</span>
         </el-menu-item>

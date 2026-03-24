@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import type { UserRole } from '../stores/user'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -36,10 +37,16 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '评测状态' },
       },
       {
+        path: 'teacher',
+        name: 'teacher',
+        component: () => import('../views/TeacherView.vue'),
+        meta: { title: '教师工作台', roles: ['teacher'] satisfies UserRole[] },
+      },
+      {
         path: 'admin',
         name: 'admin',
         component: () => import('../views/AdminView.vue'),
-        meta: { title: '管理台' },
+        meta: { title: '管理台', roles: ['admin'] satisfies UserRole[] },
       },
     ],
   },
@@ -61,12 +68,24 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const token = localStorage.getItem('oj-token')
+  const role = localStorage.getItem('oj-role') as UserRole | null
 
   if (to.path !== '/login' && !token) {
     return '/login'
   }
 
   if (to.path === '/login' && token) {
+    return '/'
+  }
+
+  const roles = to.meta.roles as UserRole[] | undefined
+  if (roles && role && !roles.includes(role)) {
+    if (role === 'admin') {
+      return '/admin'
+    }
+    if (role === 'teacher') {
+      return '/teacher'
+    }
     return '/'
   }
 
