@@ -3,7 +3,7 @@ import { ref, type CSSProperties } from 'vue'
 import { ElButton } from 'element-plus'
 
 const props = withDefaults(defineProps<{
-  tone?: 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger'
+  tone?: 'primary' | 'info' | 'accent' | 'secondary' | 'ghost' | 'danger'
   size?: 'large' | 'default' | 'small'
   block?: boolean
   mono?: boolean
@@ -145,6 +145,19 @@ function handlePointerDown(event: PointerEvent) {
 .oj-button--accent:focus-visible:not(.is-disabled) {
   background: #bf6c18;
   border-color: #bf6c18;
+}
+
+.oj-button--info {
+  color: #fff;
+  border-color: var(--oj-accent);
+  background: var(--oj-accent);
+  box-shadow: none;
+}
+
+.oj-button--info:hover:not(.is-disabled),
+.oj-button--info:focus-visible:not(.is-disabled) {
+  border-color: color-mix(in srgb, var(--oj-accent) 86%, #000);
+  background: color-mix(in srgb, var(--oj-accent) 86%, #000);
 }
 
 .oj-button--secondary {

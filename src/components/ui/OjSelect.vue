@@ -98,6 +98,16 @@ const innerValue = computed<SelectValue | undefined>({
   position: relative;
   z-index: 2;
 }
+
+.oj-select :deep(.el-select__suffix) {
+  color: color-mix(in srgb, var(--oj-muted) 86%, var(--oj-ink) 14%) !important;
+}
+
+.oj-select :deep(.el-select__caret),
+.oj-select :deep(.el-select__icon) {
+  color: color-mix(in srgb, var(--oj-muted) 86%, var(--oj-ink) 14%) !important;
+  opacity: 1 !important;
+}
 </style>
 
 <style>
@@ -111,10 +121,20 @@ const innerValue = computed<SelectValue | undefined>({
   overflow: hidden;
 }
 
+.oj-select-dropdown.el-select__popper.el-popper .el-popper__arrow::before {
+  background: color-mix(in srgb, var(--oj-panel) 94%, #ffffff 6%) !important;
+  border-color: #111827 !important;
+}
+
 :root[data-theme='dark'] .oj-select-dropdown.el-select__popper.el-popper {
   border-color: color-mix(in srgb, var(--oj-border) 88%, transparent);
   background: color-mix(in srgb, var(--oj-panel) 90%, #0b1020 10%);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme='dark'] .oj-select-dropdown.el-select__popper.el-popper .el-popper__arrow::before {
+  background: color-mix(in srgb, var(--oj-panel) 90%, #0b1020 10%) !important;
+  border-color: #f8fafc !important;
 }
 
 .oj-select-dropdown .el-select-dropdown__list {
