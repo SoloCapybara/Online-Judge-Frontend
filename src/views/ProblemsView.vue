@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import OjBadge from '../components/ui/OjBadge.vue'
+import OjButton from '../components/ui/OjButton.vue'
+import OjCard from '../components/ui/OjCard.vue'
+import OjInput from '../components/ui/OjInput.vue'
 import { useRouter } from 'vue-router'
 
 type Difficulty = '简单' | '中等' | '困难'
@@ -29,9 +33,7 @@ const filteredProblems = computed(() =>
       keyword.value.length === 0 ||
       problem.title.toLowerCase().includes(keyword.value.toLowerCase()) ||
       String(problem.id).includes(keyword.value)
-    const matchDifficulty =
-      difficulty.value === '全部' || problem.difficulty === difficulty.value
-
+    const matchDifficulty = difficulty.value === '全部' || problem.difficulty === difficulty.value
     return matchKeyword && matchDifficulty
   }),
 )
@@ -43,82 +45,77 @@ function openProblem(id: number) {
 
 <template>
   <section class="oj-page">
-    <article class="oj-panel filter-panel">
-      <div>
-        <h1 class="oj-page-title">题库</h1>
-        <p class="oj-page-subtitle">支持按题号、标题、难度快速筛选，后续可继续接分类与标签接口。</p>
+    <OjCard tone="primary" class="rounded-[20px]">
+      <div class="grid gap-5 xl:grid-cols-[1.2fr_0.8fr] xl:items-end">
+        <div class="space-y-3">
+          <div class="oj-kicker">题库检索</div>
+          <div>
+            <h1 class="oj-page-title">题库</h1>
+            <p class="oj-page-subtitle">支持按题号、标题和难度筛选，后续可继续接标签、分类和分页接口。</p>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-[1fr_180px]">
+          <OjInput v-model="keyword" placeholder="搜索题号或标题" clearable />
+          <el-select v-model="difficulty">
+            <el-option label="全部难度" value="全部" />
+            <el-option label="简单" value="简单" />
+            <el-option label="中等" value="中等" />
+            <el-option label="困难" value="困难" />
+          </el-select>
+        </div>
       </div>
 
-      <div class="filters">
-        <el-input v-model="keyword" placeholder="搜索题号或标题" clearable />
-        <el-select v-model="difficulty" class="difficulty-select">
-          <el-option label="全部难度" value="全部" />
-          <el-option label="简单" value="简单" />
-          <el-option label="中等" value="中等" />
-          <el-option label="困难" value="困难" />
-        </el-select>
+      <div class="mt-5 grid gap-4 sm:grid-cols-3">
+        <OjCard tone="neutral" class="rounded-2xl">
+          <div class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">当前结果数</div>
+          <div class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ filteredProblems.length }}</div>
+        </OjCard>
+        <OjCard tone="neutral" class="rounded-2xl">
+          <div class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">当前难度</div>
+          <div class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ difficulty }}</div>
+        </OjCard>
+        <OjCard tone="accent" class="rounded-2xl">
+          <div class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">可联调模块</div>
+          <div class="mt-2 text-sm text-slate-600 dark:text-slate-300">分类、标签、分页、题目状态</div>
+        </OjCard>
       </div>
-    </article>
+    </OjCard>
 
-    <article class="oj-panel table-panel">
-      <el-table :data="filteredProblems" stripe>
+    <OjCard tone="neutral" class="rounded-[20px]">
+      <el-table :data="filteredProblems">
         <el-table-column prop="id" label="题号" width="100" />
         <el-table-column label="题目">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openProblem(row.id)">{{ row.title }}</el-button>
+            <button class="font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-300" @click="openProblem(row.id)">
+              {{ row.title }}
+            </button>
           </template>
         </el-table-column>
         <el-table-column prop="difficulty" label="难度" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.difficulty === '简单' ? 'success' : row.difficulty === '中等' ? 'warning' : 'danger'">
+            <OjBadge
+              size="small"
+              :tone="row.difficulty === '简单' ? 'success' : row.difficulty === '中等' ? 'warning' : 'danger'"
+            >
               {{ row.difficulty }}
-            </el-tag>
+            </OjBadge>
           </template>
         </el-table-column>
         <el-table-column label="标签">
           <template #default="{ row }">
-            <div class="tag-list">
-              <el-tag v-for="tag in row.tags" :key="tag" effect="plain">{{ tag }}</el-tag>
+            <div class="flex flex-wrap gap-2">
+              <OjBadge v-for="tag in row.tags" :key="tag" size="small" tone="neutral">{{ tag }}</OjBadge>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="acceptance" label="通过率" width="120" />
-        <el-table-column label="操作" width="120">
+        <el-table-column label="操作" width="140">
           <template #default="{ row }">
-            <el-button type="primary" plain @click="openProblem(row.id)">开始做题</el-button>
+            <OjButton size="small" tone="primary" @click="openProblem(row.id)">开始做题</OjButton>
           </template>
         </el-table-column>
       </el-table>
-    </article>
+    </OjCard>
   </section>
 </template>
-
-<style scoped>
-.filter-panel,
-.table-panel {
-  padding: 24px;
-}
-
-.filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px;
-  gap: 14px;
-  margin-top: 20px;
-}
-
-.difficulty-select {
-  width: 100%;
-}
-
-.tag-list {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 860px) {
-  .filters {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

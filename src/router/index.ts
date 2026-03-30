@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import type { UserRole } from '../stores/user'
+import { finishRouteProgress, startRouteProgress } from '../composables/useRouteProgress'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -10,7 +11,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'home',
         component: () => import('../views/HomeView.vue'),
-        meta: { title: '控制台' },
+        meta: { title: '首页', affix: true },
       },
       {
         path: 'problems',
@@ -35,6 +36,36 @@ const routes: RouteRecordRaw[] = [
         name: 'status',
         component: () => import('../views/StatusView.vue'),
         meta: { title: '评测状态' },
+      },
+      {
+        path: 'submissions',
+        name: 'submissions',
+        component: () => import('../views/SubmissionsView.vue'),
+        meta: { title: '提交记录' },
+      },
+      {
+        path: 'rank',
+        name: 'rank',
+        component: () => import('../views/RankView.vue'),
+        meta: { title: '排行榜' },
+      },
+      {
+        path: 'user-center',
+        name: 'user-center',
+        component: () => import('../views/UserCenterView.vue'),
+        meta: { title: '用户中心' },
+      },
+      {
+        path: 'discuss',
+        name: 'discuss',
+        component: () => import('../views/DiscussView.vue'),
+        meta: { title: '讨论区' },
+      },
+      {
+        path: 'help',
+        name: 'help',
+        component: () => import('../views/HelpView.vue'),
+        meta: { title: '帮助 / FAQ' },
       },
       {
         path: 'teacher',
@@ -67,10 +98,13 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
+  startRouteProgress()
+
   const token = localStorage.getItem('oj-token')
   const role = localStorage.getItem('oj-role') as UserRole | null
+  const isPublicRoute = to.path === '/' || to.path === '/login'
 
-  if (to.path !== '/login' && !token) {
+  if (!isPublicRoute && !token) {
     return '/login'
   }
 
@@ -93,7 +127,12 @@ router.beforeEach((to) => {
 })
 
 router.afterEach((to) => {
+  finishRouteProgress()
   document.title = `${to.meta.title ?? '在线评测系统'} | OJ`
+})
+
+router.onError(() => {
+  finishRouteProgress()
 })
 
 export default router

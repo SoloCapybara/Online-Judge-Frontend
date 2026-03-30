@@ -1,0 +1,31 @@
+<svg width="720" height="720" viewBox="0 0 720 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="720" fill="url(#paint0_linear_0_1)"/>
+  <g opacity="0.42">
+    <circle cx="552" cy="156" r="132" stroke="#3B82F6" stroke-width="1.2"/>
+    <circle cx="552" cy="156" r="96" stroke="#3B82F6" stroke-width="1.2" stroke-dasharray="6 8"/>
+    <circle cx="552" cy="156" r="44" stroke="#F59E0B" stroke-width="1.2"/>
+    <circle cx="168" cy="540" r="116" stroke="#60A5FA" stroke-width="1.2"/>
+    <path d="M168 408V672" stroke="#93C5FD" stroke-width="1.2" stroke-dasharray="6 10"/>
+    <path d="M36 540H300" stroke="#93C5FD" stroke-width="1.2" stroke-dasharray="6 10"/>
+    <path d="M404 76L646 318" stroke="#CBD5E1" stroke-width="1.2"/>
+    <path d="M450 312H644" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 10"/>
+  </g>
+  <g opacity="0.2">
+    <path d="M0 120H720" stroke="#CBD5E1"/>
+    <path d="M0 240H720" stroke="#CBD5E1"/>
+    <path d="M0 360H720" stroke="#CBD5E1"/>
+    <path d="M0 480H720" stroke="#CBD5E1"/>
+    <path d="M0 600H720" stroke="#CBD5E1"/>
+    <path d="M120 0V720" stroke="#CBD5E1"/>
+    <path d="M240 0V720" stroke="#CBD5E1"/>
+    <path d="M360 0V720" stroke="#CBD5E1"/>
+    <path d="M480 0V720" stroke="#CBD5E1"/>
+    <path d="M600 0V720" stroke="#CBD5E1"/>
+  </g>
+  <defs>
+    <linearGradient id="paint0_linear_0_1" x1="360" y1="0" x2="360" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#F2F6FB"/>
+    </linearGradient>
+  </defs>
+</svg>

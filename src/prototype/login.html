@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 · CodeArena 评测</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("codearena-theme");
+        if (t === "light") document.documentElement.classList.remove("dark");
+        else if (t === "dark") document.documentElement.classList.add("dark");
+        else document.documentElement.classList.add("dark");
+      } catch (e) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["DM Sans", "system-ui", "sans-serif"],
+            mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+          },
+          boxShadow: {
+            card: "0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)",
+            "card-dark": "0 1px 2px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.18)",
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.08), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.05), transparent 45%);
+    }
+    .dark .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.08), transparent 45%);
+    }
+    .login-hero-gradient {
+      background:
+        linear-gradient(145deg, rgba(124, 92, 255, 0.18) 0%, transparent 45%),
+        linear-gradient(215deg, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(18, 21, 31, 0.92) 0%, rgba(12, 14, 20, 0.98) 100%);
+    }
+    html:not(.dark) .login-hero-gradient {
+      background:
+        linear-gradient(145deg, rgba(124, 92, 255, 0.12) 0%, transparent 45%),
+        linear-gradient(215deg, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.98) 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#e8ecf4] font-sans text-slate-900 antialiased transition-colors dark:bg-[#0c0e14] dark:text-slate-100">
+  <div class="bg-mesh pointer-events-none fixed inset-0 z-0" aria-hidden="true"></div>
+
+  <div class="relative z-10 flex min-h-screen flex-col lg:flex-row">
+    <!-- 左侧品牌区（大屏） -->
+    <aside class="login-hero-gradient relative hidden overflow-hidden border-slate-200/60 lg:flex lg:w-[min(44vw,520px)] lg:flex-col lg:justify-between lg:border-r lg:border-slate-200/50 lg:px-10 lg:py-12 dark:border-white/[0.06]">
+      <div class="pointer-events-none absolute -right-24 top-1/4 h-72 w-72 rounded-full bg-violet-500/20 blur-3xl dark:bg-violet-500/25"></div>
+      <div class="pointer-events-none absolute -left-16 bottom-1/4 h-56 w-56 rounded-full bg-sky-400/15 blur-3xl dark:bg-sky-400/20"></div>
+      <div class="relative">
+        <a href="index.html" class="inline-flex items-center gap-3 rounded-xl text-inherit no-underline transition hover:opacity-90">
+          <div class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-sky-500 font-mono text-base font-bold text-white shadow-xl shadow-violet-500/30">{ }</div>
+          <div class="leading-tight">
+            <span class="block text-lg font-semibold tracking-tight">CodeArena</span>
+            <span class="text-sm text-slate-500 dark:text-slate-400">在线评测</span>
+          </div>
+        </a>
+        <h1 class="mt-12 max-w-sm text-3xl font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-100">
+          写代码，交评测，<span class="bg-gradient-to-r from-violet-600 to-sky-500 bg-clip-text text-transparent dark:from-violet-400 dark:to-sky-400">看结果</span>。
+        </h1>
+        <p class="mt-4 max-w-sm text-[0.95rem] leading-relaxed text-slate-600 dark:text-slate-400">
+          与全站选手同台刷题，支持多语言评测与实时队列；登录后可同步提交记录与比赛报名。
+        </p>
+      </div>
+      <div class="relative mt-8 grid grid-cols-3 gap-3 border-t border-slate-200/60 pt-8 dark:border-white/[0.08]">
+        <div class="rounded-xl border border-slate-200/80 bg-white/50 px-3 py-3 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#12151f]/60">
+          <div class="font-mono text-xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">3.8k+</div>
+          <div class="mt-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">题目</div>
+        </div>
+        <div class="rounded-xl border border-slate-200/80 bg-white/50 px-3 py-3 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#12151f]/60">
+          <div class="font-mono text-xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">18k+</div>
+          <div class="mt-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">日提交</div>
+        </div>
+        <div class="rounded-xl border border-slate-200/80 bg-white/50 px-3 py-3 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#12151f]/60">
+          <div class="font-mono text-xl font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">&lt;2s</div>
+          <div class="mt-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">平均等待</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 右侧表单 -->
+    <div class="flex flex-1 flex-col">
+      <header class="flex items-center justify-between gap-3 border-b border-slate-200/80 bg-white/70 px-4 py-3 backdrop-blur-md dark:border-white/[0.06] dark:bg-[#0c0e14]/70 lg:border-0 lg:bg-transparent lg:px-8 lg:pt-8 lg:backdrop-blur-none">
+        <a href="index.html" class="inline-flex items-center gap-2.5 rounded-lg text-inherit no-underline transition hover:opacity-90 lg:hidden">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 font-mono text-sm font-bold text-white shadow-lg shadow-violet-500/25">{ }</div>
+          <span class="font-semibold tracking-tight">CodeArena</span>
+        </a>
+        <div class="ml-auto flex items-center gap-2">
+          <a href="index.html" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">返回首页</a>
+          <button
+            type="button"
+            id="themeToggle"
+            class="relative h-7 w-[52px] shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 transition hover:border-violet-400/50 dark:border-white/10 dark:bg-[#181c2a]"
+            aria-pressed="true"
+            aria-label="切换主题"
+            title="切换主题"
+          >
+            <span class="pointer-events-none absolute inset-[3px] z-0 flex items-center justify-between px-[5px]" aria-hidden="true">
+              <svg class="h-3.5 w-3.5 text-violet-500 opacity-40 dark:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              <svg class="h-3.5 w-3.5 text-amber-500 opacity-100 dark:opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </span>
+            <span class="pointer-events-none absolute left-[3px] top-[3px] z-[1] h-[22px] w-[22px] translate-x-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-md shadow-amber-500/40 transition-transform duration-300 ease-[cubic-bezier(0.34,1.2,0.64,1)] dark:translate-x-0 dark:from-violet-500 dark:to-sky-500 dark:shadow-violet-500/30"></span>
+          </button>
+        </div>
+      </header>
+
+      <main class="flex flex-1 flex-col items-center justify-center px-4 pb-10 pt-6 sm:px-6 lg:px-12 lg:pb-16 lg:pt-4">
+        <div class="w-full max-w-[420px]">
+          <div class="mb-8 text-center lg:text-left">
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">欢迎回来</h2>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">使用账号登录以提交代码、参加比赛并同步记录。</p>
+          </div>
+
+          <form id="loginForm" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark sm:p-8" novalidate>
+            <div class="space-y-5">
+              <div>
+                <label for="loginId" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">用户名或邮箱</label>
+                <input
+                  id="loginId"
+                  name="login"
+                  type="text"
+                  autocomplete="username"
+                  required
+                  placeholder="star_x 或 name@school.edu"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+              </div>
+              <div>
+                <div class="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                  <label for="loginPassword" class="text-sm font-medium text-slate-700 dark:text-slate-300">密码</label>
+                  <a href="#" class="text-xs font-medium text-violet-600 underline-offset-2 hover:underline dark:text-violet-400">忘记密码？</a>
+                </div>
+                <input
+                  id="loginPassword"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                  placeholder="••••••••"
+                  class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="remember" name="remember" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500/40 dark:border-white/20 dark:bg-[#181c2a]" />
+                <label for="remember" class="text-sm text-slate-600 dark:text-slate-400">在此设备上保持登录（30 天）</label>
+              </div>
+              <button
+                type="submit"
+                class="w-full rounded-xl bg-violet-600 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:bg-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/30 dark:bg-violet-600 dark:hover:bg-violet-500"
+              >
+                登录
+              </button>
+            </div>
+
+            <div class="relative my-8">
+              <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                <div class="w-full border-t border-slate-200 dark:border-white/[0.08]"></div>
+              </div>
+              <div class="relative flex justify-center text-xs font-medium uppercase tracking-wider">
+                <span class="bg-white px-3 text-slate-400 dark:bg-[#12151f] dark:text-slate-500">或</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+              </button>
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]">
+                <svg class="h-5 w-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                校园统一认证
+              </button>
+            </div>
+
+            <p class="mt-8 text-center text-sm text-slate-600 dark:text-slate-400">
+              还没有账号？
+              <a href="#" class="font-medium text-violet-600 underline-offset-2 hover:underline dark:text-violet-400">注册 CodeArena</a>
+            </p>
+          </form>
+
+          <p class="mt-8 text-center text-xs text-slate-500 dark:text-slate-500">
+            登录即表示你同意
+            <a href="#" class="underline-offset-2 hover:underline">服务条款</a>
+            与
+            <a href="#" class="underline-offset-2 hover:underline">隐私政策</a>
+          </p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var themeBtn = document.getElementById("themeToggle");
+      function syncThemeUi() {
+        var isDark = document.documentElement.classList.contains("dark");
+        if (themeBtn) {
+          themeBtn.setAttribute("aria-pressed", isDark ? "true" : "false");
+          themeBtn.setAttribute("aria-label", isDark ? "切换到浅色模式" : "切换到深色模式");
+          themeBtn.title = isDark ? "当前：深色 · 点击切换浅色" : "当前：浅色 · 点击切换深色";
+        }
+      }
+      function setTheme(next) {
+        if (next === "dark") document.documentElement.classList.add("dark");
+        else document.documentElement.classList.remove("dark");
+        try {
+          localStorage.setItem("codearena-theme", next);
+        } catch (e) {}
+        syncThemeUi();
+      }
+      if (themeBtn) {
+        syncThemeUi();
+        themeBtn.addEventListener("click", function () {
+          setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark");
+        });
+      }
+
+      var form = document.getElementById("loginForm");
+      if (form) {
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          window.location.href = "index.html";
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

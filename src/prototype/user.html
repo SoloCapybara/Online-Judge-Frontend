@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用户中心 · CodeArena 评测</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("codearena-theme");
+        if (t === "light") document.documentElement.classList.remove("dark");
+        else if (t === "dark") document.documentElement.classList.add("dark");
+        else document.documentElement.classList.add("dark");
+      } catch (e) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["DM Sans", "system-ui", "sans-serif"],
+            mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+          },
+          boxShadow: {
+            card: "0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)",
+            "card-dark": "0 1px 2px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.18)",
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.08), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.05), transparent 45%);
+    }
+    .dark .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.08), transparent 45%);
+    }
+    @media (min-width: 1024px) {
+      #layout.sidebar-collapsed .nav-label,
+      #layout.sidebar-collapsed .brand-text,
+      #layout.sidebar-collapsed .nav-section-h,
+      #layout.sidebar-collapsed .sidebar-footer-prose {
+        display: none !important;
+      }
+      #layout.sidebar-collapsed .sidebar-brand-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      #layout.sidebar-collapsed .sidebar-brand-row > a {
+        flex: none !important;
+        width: auto;
+        min-width: 0;
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      #layout.sidebar-collapsed #sidebarCollapseToggle {
+        flex-shrink: 0;
+      }
+      #layout.sidebar-collapsed .sidebar-nav-link {
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+      #layout.sidebar-collapsed .footer-btn-label {
+        display: none !important;
+      }
+      #layout.sidebar-collapsed .sidebar-footer-btns .sidebar-footer-btn {
+        width: 100%;
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#e8ecf4] font-sans text-slate-900 antialiased transition-colors dark:bg-[#0c0e14] dark:text-slate-100">
+  <div class="bg-mesh pointer-events-none fixed inset-0 z-0" aria-hidden="true"></div>
+  <div id="overlay" class="fixed inset-0 z-[99] hidden bg-black/50 dark:bg-slate-950/40" aria-hidden="true"></div>
+
+  <div id="layout" style="--sb: 260px" class="relative z-10 grid min-h-screen grid-cols-1 lg:[grid-template-columns:var(--sb)_minmax(0,1fr)] transition-[grid-template-columns] duration-300 ease-out">
+    <script>
+      (function () {
+        var el = document.getElementById("layout");
+        if (!el) return;
+        try {
+          if (localStorage.getItem("codearena-sidebar-collapsed") === "1") {
+            el.style.setProperty("--sb", "72px");
+            el.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <aside
+      id="sidebar"
+      class="flex h-screen max-h-[100dvh] flex-col gap-3 overflow-hidden border-slate-200/80 bg-white/90 px-3 py-3.5 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.06] dark:bg-[#12151f]/85 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:self-start lg:shadow-none max-[960px]:fixed max-[960px]:left-0 max-[960px]:top-0 max-[960px]:z-[100] max-[960px]:w-[min(280px,88vw)] max-[960px]:-translate-x-[calc(100%+12px)] max-[960px]:border-r max-[960px]:shadow-2xl"
+      aria-label="站点导航"
+    >
+      <div class="sidebar-brand-row flex shrink-0 items-center gap-1.5">
+        <a href="index.html" class="sidebar-brand-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1 text-inherit no-underline lg:min-h-0" title="CodeArena">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 font-mono text-sm font-bold text-white shadow-lg shadow-violet-500/25">{ }</div>
+          <div class="brand-text flex min-w-0 flex-col leading-tight">
+            <strong class="text-[0.95rem] font-semibold tracking-tight">CodeArena</strong>
+            <span class="text-xs text-slate-500 dark:text-slate-400">在线评测</span>
+          </div>
+        </a>
+        <button type="button" id="sidebarCollapseToggle" class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06] lg:inline-flex" aria-expanded="true" aria-label="折叠侧栏" title="折叠侧栏">
+          <svg id="sidebarCollapseIcon" class="h-5 w-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-color:rgba(148,163,184,0.45)_transparent] [scrollbar-width:thin]">
+        <nav aria-label="主要导航">
+          <div class="nav-section-h mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-400">练习</div>
+          <ul class="flex flex-col gap-1">
+            <li>
+              <a href="index.html" title="首页" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span class="nav-label truncate">首页</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="题库" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="nav-label truncate">题库</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="比赛" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                <span class="nav-label truncate">比赛</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="提交记录" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M12 16h.01"/></svg>
+                <span class="nav-label truncate">提交记录</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="评测状态" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                <span class="nav-label truncate">评测状态</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="排行榜" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="nav-label truncate">排行榜</span>
+              </a>
+            </li>
+            <li>
+              <a href="user.html" title="用户中心" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg bg-violet-500/10 px-3 py-2.5 text-sm font-medium text-slate-900 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.25)] transition dark:text-slate-100" aria-current="page">
+                <svg class="h-5 w-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="nav-label truncate">用户中心</span>
+              </a>
+            </li>
+          </ul>
+          <div class="nav-section-h mb-2 mt-4 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-400">社区</div>
+          <ul class="flex flex-col gap-1">
+            <li>
+              <a href="#" title="讨论区" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span class="nav-label truncate">讨论区</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="帮助 / FAQ" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="nav-label truncate">帮助 / FAQ</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer-btns mt-auto shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/[0.06] dark:bg-[#181c2a]">
+        <p class="sidebar-footer-prose mb-3 text-[0.8rem] leading-relaxed text-slate-500 dark:text-slate-400">判题机队列空闲 · 平均等待 &lt; 2s。支持 C/C++/Java/Python/Go。</p>
+        <button type="button" title="查看评测机状态" class="sidebar-footer-btn flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-transparent py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]">
+          <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+          <span class="footer-btn-label">查看评测机状态</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="flex min-w-0 flex-col">
+      <header class="sticky top-0 z-10 flex flex-col border-b border-slate-200/80 bg-white/75 backdrop-blur-md dark:border-white/[0.06] dark:bg-[#0c0e14]/75">
+        <div class="flex flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap">
+          <button type="button" id="menuToggle" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 lg:hidden dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200" aria-label="打开菜单">
+            <svg class="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        <div class="order-3 flex min-w-0 flex-1 basis-full lg:order-none lg:basis-auto">
+          <div class="relative w-full max-w-[420px] flex-1 lg:max-w-[420px]">
+            <svg class="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="search" placeholder="搜索题号、标题、标签（如 DP、图论）…" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none ring-violet-500/30 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#12151f] dark:text-slate-100 dark:placeholder:text-slate-500" />
+          </div>
+        </div>
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            id="themeToggle"
+            class="relative h-7 w-[52px] shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 transition hover:border-violet-400/50 dark:border-white/10 dark:bg-[#181c2a]"
+            aria-pressed="true"
+            aria-label="切换到浅色模式"
+            title="当前：深色 · 点击切换浅色"
+          >
+            <span class="pointer-events-none absolute inset-[3px] z-0 flex items-center justify-between px-[5px]" aria-hidden="true">
+              <svg class="h-3.5 w-3.5 text-violet-500 opacity-40 dark:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              <svg class="h-3.5 w-3.5 text-amber-500 opacity-100 dark:opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </span>
+            <span class="pointer-events-none absolute left-[3px] top-[3px] z-[1] h-[22px] w-[22px] translate-x-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-md shadow-amber-500/40 transition-transform duration-300 ease-[cubic-bezier(0.34,1.2,0.64,1)] dark:translate-x-0 dark:from-violet-500 dark:to-sky-500 dark:shadow-violet-500/30"></span>
+          </button>
+          <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:border-white/10 dark:bg-[#181c2a] dark:hover:bg-white/[0.06] dark:hover:text-slate-100" aria-label="通知">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <a href="login.html" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 no-underline transition hover:bg-slate-100 hover:text-slate-900 sm:inline-flex dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">登录</a>
+          <a href="user.html" class="flex items-center gap-2 rounded-full border border-violet-500/35 bg-violet-500/10 py-1 pl-1 pr-3 text-sm font-medium text-slate-800 no-underline dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-slate-100 max-[600px]:pr-1" aria-current="page">
+            <span class="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white">S</span>
+            <span class="max-[600px]:hidden">用户中心</span>
+          </a>
+        </div>
+        </div>
+        <div class="flex items-end gap-1 border-t border-slate-200/50 px-4 pb-2 pt-1.5 dark:border-white/[0.06]" aria-label="页面标签栏">
+          <div id="pageTabs" class="flex min-h-[36px] min-w-0 flex-1 items-end gap-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]" role="tablist" aria-label="已打开页面"></div>
+          <div class="flex shrink-0 items-end gap-1 self-end pb-0.5">
+            <button type="button" id="tabRefreshBtn" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06]" title="无感刷新当前页内容" aria-label="刷新当前页">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+            <div class="relative z-30">
+              <button type="button" id="tabAddBtn" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-lg font-medium leading-none text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06]" title="打开页面" aria-label="打开页面" aria-haspopup="true">+</button>
+              <div id="tabAddMenu" class="absolute right-0 top-full z-50 mt-1 hidden min-w-[180px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-[#12151f]" role="menu"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 p-4 sm:p-6">
+        <div class="mx-auto max-w-5xl">
+          <!-- 身份卡 -->
+          <section class="relative mb-8 overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-white via-white to-slate-50/80 p-6 shadow-card ring-1 ring-slate-200/50 dark:border-white/[0.08] dark:from-[#12151f] dark:via-[#12151f] dark:to-[#181c2a]/90 dark:shadow-card-dark dark:ring-white/[0.04]" aria-labelledby="display-name">
+            <div class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl dark:bg-violet-500/15"></div>
+            <div class="pointer-events-none absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl dark:bg-sky-500/12"></div>
+            <div class="relative flex flex-col gap-6 sm:flex-row sm:items-start">
+              <div class="relative shrink-0">
+                <button
+                  type="button"
+                  id="avatarOpenBtn"
+                  class="group relative flex h-[5.5rem] w-[5.5rem] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-lg outline-none ring-offset-2 ring-offset-white transition hover:border-violet-400/60 focus-visible:ring-4 focus-visible:ring-violet-500/40 dark:border-white/10 dark:bg-[#181c2a] dark:ring-offset-[#12151f]"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                  aria-controls="avatarUploadModal"
+                  title="更换头像"
+                >
+                  <img
+                    id="profileAvatarImg"
+                    src="https://example.com/avatar.png"
+                    alt=""
+                    width="88"
+                    height="88"
+                    class="h-full w-full object-cover"
+                    onerror="this.classList.add('hidden'); var f=document.getElementById('profileAvatarFallback'); if(f) f.classList.remove('hidden');"
+                  />
+                  <div id="profileAvatarFallback" class="hidden absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-500 to-violet-600 text-3xl font-semibold text-white" aria-hidden="true">S</div>
+                  <span class="pointer-events-none absolute inset-0 flex items-center justify-center bg-slate-900/0 transition group-hover:bg-slate-900/45 group-focus-visible:bg-slate-900/45">
+                    <span class="translate-y-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+                      <span class="rounded-md bg-white/95 px-2.5 py-1 text-xs font-medium text-slate-800 shadow-sm dark:bg-[#181c2a]/95 dark:text-slate-100">更换头像</span>
+                    </span>
+                  </span>
+                </button>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 id="display-name" class="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">System Admin</h2>
+                  <span class="rounded-md border border-amber-200/80 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300">账号状态：禁用</span>
+                </div>
+                <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                  <div class="flex items-center gap-2">
+                    <dt class="text-slate-500 dark:text-slate-500">角色</dt>
+                    <dd><span class="rounded-md bg-violet-500/10 px-2 py-0.5 font-medium text-violet-800 dark:text-violet-300">管理员</span></dd>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <dt class="text-slate-500 dark:text-slate-500">用户名</dt>
+                    <dd class="font-mono text-slate-800 dark:text-slate-200">admin</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </section>
+
+          <!-- 统计 -->
+          <section class="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-3" aria-label="练习数据">
+            <article class="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:border-violet-300/40 hover:shadow-lg dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark dark:hover:border-violet-500/25">
+              <div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-violet-500/10 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400" aria-hidden="true">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">已通过题目</div>
+              <div class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">412</div>
+              <p class="mt-2 text-xs text-slate-500 dark:text-slate-500">评测通过的去重题数</p>
+            </article>
+            <article class="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:border-violet-300/40 hover:shadow-lg dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark dark:hover:border-violet-500/25">
+              <div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-sky-500/10 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400" aria-hidden="true">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+              </div>
+              <div class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">总提交次数</div>
+              <div class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">3,204</div>
+              <p class="mt-2 text-xs text-slate-500 dark:text-slate-500">含评测中与各结果</p>
+            </article>
+            <article class="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:border-violet-300/40 hover:shadow-lg dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark dark:hover:border-violet-500/25">
+              <div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400" aria-hidden="true">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <div class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">连续打卡</div>
+              <div class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">12<span class="ml-0.5 text-base font-medium text-slate-500 dark:text-slate-400">天</span></div>
+              <p class="mt-2 text-xs text-slate-500 dark:text-slate-500">最长连续 28 天</p>
+            </article>
+          </section>
+
+          <div class="grid grid-cols-1 gap-8 xl:grid-cols-[1fr_340px] xl:items-start xl:gap-10">
+            <!-- 个人资料表单 -->
+            <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-card dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark sm:p-8">
+              <div class="mb-6 border-b border-slate-200 pb-4 dark:border-white/[0.06]">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">个人资料</h3>
+              </div>
+              <form id="profileForm" class="space-y-5" action="/api/user/profile" method="post" autocomplete="on">
+                <div class="grid gap-5 sm:grid-cols-2">
+                  <div class="sm:col-span-1">
+                    <label for="username" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">用户名</label>
+                    <input id="username" name="username" type="text" value="admin" readonly class="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600 dark:border-white/10 dark:bg-[#0c0e14] dark:text-slate-400" />
+                  </div>
+                  <div class="sm:col-span-1">
+                    <label for="userId" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">用户 ID</label>
+                    <input id="userId" name="userId" type="text" value="2038599968272380000" readonly class="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 font-mono text-sm text-slate-600 dark:border-white/10 dark:bg-[#0c0e14] dark:text-slate-400" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label for="realName" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">真实姓名</label>
+                    <input id="realName" name="realName" type="text" value="System Admin" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100" />
+                  </div>
+                  <div>
+                    <label for="studentId" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">学号</label>
+                    <input id="studentId" name="studentId" type="text" placeholder="请输入学号（选填）" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100 dark:placeholder:text-slate-500" />
+                  </div>
+                  <div>
+                    <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">邮箱</label>
+                    <input id="email" name="email" type="email" value="name@example.com" autocomplete="email" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100" />
+                  </div>
+                  <div>
+                    <label for="phone" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">手机号</label>
+                    <input id="phone" name="phone" type="tel" placeholder="请输入手机号（选填）" autocomplete="tel" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100 dark:placeholder:text-slate-500" />
+                  </div>
+                  <div>
+                    <label for="gender" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">性别</label>
+                    <select id="gender" name="gender" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100">
+                      <option value="" selected>未设置</option>
+                      <option value="male">男</option>
+                      <option value="female">女</option>
+                      <option value="other">其他</option>
+                    </select>
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label for="avatarUrl" class="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">头像地址</label>
+                    <input id="avatarUrl" name="avatarUrl" type="url" value="https://example.com/avatar.png" placeholder="https://…" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 font-mono text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100" />
+                  </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 pt-2">
+                  <button type="submit" class="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:bg-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/30 dark:bg-violet-600 dark:hover:bg-violet-500">保存并同步</button>
+                </div>
+              </form>
+            </section>
+
+            <!-- 账号摘要 -->
+            <aside class="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 shadow-sm dark:border-white/[0.08] dark:bg-[#181c2a]/80 sm:p-6">
+              <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">账号摘要</h3>
+              <dl class="mt-6 space-y-4 text-sm">
+                <div class="flex justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/[0.06]">
+                  <dt class="text-slate-500 dark:text-slate-500">姓名</dt>
+                  <dd class="font-medium text-slate-900 dark:text-slate-100">System Admin</dd>
+                </div>
+                <div class="flex justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/[0.06]">
+                  <dt class="text-slate-500 dark:text-slate-500">性别</dt>
+                  <dd class="text-slate-600 dark:text-slate-300">未设置</dd>
+                </div>
+                <div class="flex justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/[0.06]">
+                  <dt class="text-slate-500 dark:text-slate-500">邮箱</dt>
+                  <dd class="text-slate-600 dark:text-slate-300">未设置</dd>
+                </div>
+                <div class="flex justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/[0.06]">
+                  <dt class="text-slate-500 dark:text-slate-500">手机号</dt>
+                  <dd class="text-slate-600 dark:text-slate-300">未设置</dd>
+                </div>
+                <div class="flex justify-between gap-3 border-b border-slate-200/80 pb-3 dark:border-white/[0.06]">
+                  <dt class="text-slate-500 dark:text-slate-500">学号</dt>
+                  <dd class="text-slate-600 dark:text-slate-300">未设置</dd>
+                </div>
+                <div class="flex justify-between gap-3">
+                  <dt class="text-slate-500 dark:text-slate-500">账号状态</dt>
+                  <dd><span class="rounded-md bg-rose-500/10 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">禁用</span></dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- 更换头像 -->
+  <div
+    id="avatarUploadModal"
+    class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="avatarUploadTitle"
+    aria-hidden="true"
+  >
+    <button type="button" id="avatarModalBackdrop" class="absolute inset-0 bg-black/50 backdrop-blur-[2px] dark:bg-slate-950/55" aria-label="关闭"></button>
+    <div class="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-white/[0.08] dark:bg-[#12151f]">
+      <h2 id="avatarUploadTitle" class="text-lg font-semibold text-slate-900 dark:text-slate-100">更换头像</h2>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">支持 JPG、PNG、GIF、WebP，建议小于 5MB。</p>
+      <div class="mt-5 flex aspect-square max-h-[240px] w-full max-w-[240px] mx-auto items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50 dark:border-white/15 dark:bg-[#0c0e14]">
+        <img id="avatarModalPreview" alt="" class="hidden max-h-full max-w-full object-contain" />
+        <span id="avatarModalPlaceholder" class="px-4 text-center text-sm text-slate-400 dark:text-slate-500">尚未选择图片</span>
+      </div>
+      <input id="avatarFileInput" type="file" class="hidden" accept="image/jpeg,image/png,image/gif,image/webp" />
+      <div class="mt-5 flex flex-wrap gap-2">
+        <button type="button" id="avatarPickBtn" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]">选择图片</button>
+      </div>
+      <div class="mt-6 flex justify-end gap-2 border-t border-slate-200 pt-4 dark:border-white/[0.06]">
+        <button type="button" id="avatarCancelBtn" class="rounded-xl px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/[0.06]">取消</button>
+        <button type="button" id="avatarApplyBtn" class="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-violet-600 dark:hover:bg-violet-500" disabled>应用</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app-shell.js" defer></script>
+  <script>
+    (function () {
+      var form = document.getElementById("profileForm");
+      if (form) form.addEventListener("submit", function (e) { e.preventDefault(); });
+
+      var modal = document.getElementById("avatarUploadModal");
+      var openBtn = document.getElementById("avatarOpenBtn");
+      var backdrop = document.getElementById("avatarModalBackdrop");
+      var cancelBtn = document.getElementById("avatarCancelBtn");
+      var pickBtn = document.getElementById("avatarPickBtn");
+      var fileInput = document.getElementById("avatarFileInput");
+      var preview = document.getElementById("avatarModalPreview");
+      var placeholder = document.getElementById("avatarModalPlaceholder");
+      var applyBtn = document.getElementById("avatarApplyBtn");
+      var cardImg = document.getElementById("profileAvatarImg");
+      var cardFallback = document.getElementById("profileAvatarFallback");
+      var avatarUrlInput = document.getElementById("avatarUrl");
+
+      var pendingDataUrl = null;
+      var pendingRevoke = null;
+
+      function setOpen(expanded) {
+        if (!openBtn) return;
+        openBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      }
+
+      function clearPending() {
+        if (pendingRevoke) {
+          try { URL.revokeObjectURL(pendingRevoke); } catch (e) {}
+          pendingRevoke = null;
+        }
+        pendingDataUrl = null;
+      }
+
+      function resetModalPreview() {
+        clearPending();
+        if (preview) {
+          preview.src = "";
+          preview.classList.add("hidden");
+        }
+        if (placeholder) placeholder.classList.remove("hidden");
+        if (applyBtn) applyBtn.disabled = true;
+        if (fileInput) fileInput.value = "";
+      }
+
+      function openModal() {
+        if (!modal) return;
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden", "false");
+        setOpen(true);
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModal() {
+        if (!modal) return;
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden", "true");
+        setOpen(false);
+        document.body.style.overflow = "";
+        resetModalPreview();
+      }
+
+      function showModalPreviewFromFile(file) {
+        if (!file || !preview || !placeholder || !applyBtn) return;
+        clearPending();
+        var maxBytes = 5 * 1024 * 1024;
+        if (file.size > maxBytes) {
+          alert("图片需小于 5MB");
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          var dataUrl = reader.result;
+          if (typeof dataUrl !== "string") return;
+          pendingDataUrl = dataUrl;
+          preview.src = dataUrl;
+          preview.classList.remove("hidden");
+          placeholder.classList.add("hidden");
+          applyBtn.disabled = false;
+        };
+        reader.onerror = function () {
+          alert("无法读取该文件");
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function applyAvatar() {
+        if (!pendingDataUrl || !cardImg) return;
+        cardImg.onload = function () {
+          cardImg.classList.remove("hidden");
+          if (cardFallback) cardFallback.classList.add("hidden");
+        };
+        cardImg.onerror = function () {
+          cardImg.classList.add("hidden");
+          if (cardFallback) cardFallback.classList.remove("hidden");
+        };
+        cardImg.src = pendingDataUrl;
+        if (avatarUrlInput) avatarUrlInput.value = pendingDataUrl;
+        closeModal();
+      }
+
+      if (openBtn && modal) {
+        openBtn.addEventListener("click", function () {
+          resetModalPreview();
+          openModal();
+        });
+      }
+      if (backdrop) backdrop.addEventListener("click", closeModal);
+      if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+      if (pickBtn && fileInput) {
+        pickBtn.addEventListener("click", function () { fileInput.click(); });
+      }
+      if (fileInput) {
+        fileInput.addEventListener("change", function () {
+          var f = fileInput.files && fileInput.files[0];
+          if (f) showModalPreviewFromFile(f);
+        });
+      }
+      if (applyBtn) applyBtn.addEventListener("click", applyAvatar);
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) {
+          closeModal();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

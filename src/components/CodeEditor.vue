@@ -70,8 +70,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .editor-container {
   min-height: 480px;
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(19, 34, 56, 0.08);
+  border: 1px solid #dbe5f0;
 }
 </style>

@@ -4,7 +4,10 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import { createPinia } from 'pinia'
 import router from './router'
+import { initializeShellTheme } from './composables/useShellTheme'
 import './style.css'
+
+initializeShellTheme()
 
 const app = createApp(App)
 
