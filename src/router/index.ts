@@ -20,6 +20,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '题库' },
       },
       {
+        path: 'problems/create',
+        name: 'problem-create',
+        component: () => import('../views/ProblemEditView.vue'),
+        meta: { title: '创建题目', roles: ['teacher', 'admin'] satisfies UserRole[] },
+      },
+      {
+        path: 'problems/:id/edit',
+        name: 'problem-edit',
+        component: () => import('../views/ProblemEditView.vue'),
+        meta: { title: '编辑题目', roles: ['teacher', 'admin'] satisfies UserRole[] },
+      },
+      {
         path: 'problems/:id',
         name: 'problem-detail',
         component: () => import('../views/ProblemDetailView.vue'),

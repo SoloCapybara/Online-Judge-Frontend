@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>编辑题目 · CodeArena 评测</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("codearena-theme");
+        if (t === "light") document.documentElement.classList.remove("dark");
+        else if (t === "dark") document.documentElement.classList.add("dark");
+        else document.documentElement.classList.add("dark");
+      } catch (e) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["DM Sans", "system-ui", "sans-serif"],
+            mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+          },
+          boxShadow: {
+            card: "0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)",
+            "card-dark": "0 1px 2px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.18)",
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.08), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.05), transparent 45%);
+    }
+    .dark .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.08), transparent 45%);
+    }
+    @media (min-width: 1024px) {
+      #layout.sidebar-collapsed .nav-label,
+      #layout.sidebar-collapsed .brand-text,
+      #layout.sidebar-collapsed .nav-section-h,
+      #layout.sidebar-collapsed .sidebar-footer-prose {
+        display: none !important;
+      }
+      #layout.sidebar-collapsed .sidebar-brand-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      #layout.sidebar-collapsed .sidebar-brand-row > a {
+        flex: none !important;
+        width: auto;
+        min-width: 0;
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      #layout.sidebar-collapsed #sidebarCollapseToggle {
+        flex-shrink: 0;
+      }
+      #layout.sidebar-collapsed .sidebar-nav-link {
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+      #layout.sidebar-collapsed .footer-btn-label {
+        display: none !important;
+      }
+      #layout.sidebar-collapsed .sidebar-footer-btns .sidebar-footer-btn {
+        width: 100%;
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#e8ecf4] font-sans text-slate-900 antialiased transition-colors dark:bg-[#0c0e14] dark:text-slate-100">
+  <div class="bg-mesh pointer-events-none fixed inset-0 z-0" aria-hidden="true"></div>
+  <div id="overlay" class="fixed inset-0 z-[99] hidden bg-black/50 dark:bg-slate-950/40" aria-hidden="true"></div>
+
+  <div id="layout" style="--sb: 260px" class="relative z-10 grid min-h-screen grid-cols-1 lg:[grid-template-columns:var(--sb)_minmax(0,1fr)] transition-[grid-template-columns] duration-300 ease-out">
+    <script>
+      (function () {
+        var el = document.getElementById("layout");
+        if (!el) return;
+        try {
+          if (localStorage.getItem("codearena-sidebar-collapsed") === "1") {
+            el.style.setProperty("--sb", "72px");
+            el.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <aside
+      id="sidebar"
+      class="flex h-screen max-h-[100dvh] flex-col gap-3 overflow-hidden border-slate-200/80 bg-white/90 px-3 py-3.5 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.06] dark:bg-[#12151f]/85 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:self-start lg:shadow-none max-[960px]:fixed max-[960px]:left-0 max-[960px]:top-0 max-[960px]:z-[100] max-[960px]:w-[min(280px,88vw)] max-[960px]:-translate-x-[calc(100%+12px)] max-[960px]:border-r max-[960px]:shadow-2xl"
+      aria-label="站点导航"
+    >
+      <div class="sidebar-brand-row flex shrink-0 items-center gap-1.5">
+        <a href="index.html" class="sidebar-brand-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1 text-inherit no-underline lg:min-h-0" title="CodeArena">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 font-mono text-sm font-bold text-white shadow-lg shadow-violet-500/25">{ }</div>
+          <div class="brand-text flex min-w-0 flex-col leading-tight">
+            <strong class="text-[0.95rem] font-semibold tracking-tight">CodeArena</strong>
+            <span class="text-xs text-slate-500 dark:text-slate-400">在线评测</span>
+          </div>
+        </a>
+        <button type="button" id="sidebarCollapseToggle" class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06] lg:inline-flex" aria-expanded="true" aria-label="折叠侧栏" title="折叠侧栏">
+          <svg id="sidebarCollapseIcon" class="h-5 w-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-color:rgba(148,163,184,0.45)_transparent] [scrollbar-width:thin]">
+        <nav aria-label="主要导航">
+          <div class="nav-section-h mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-400">练习</div>
+          <ul class="flex flex-col gap-1">
+            <li>
+              <a href="index.html" title="首页" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span class="nav-label truncate">首页</span>
+              </a>
+            </li>
+            <li>
+              <a href="problems.html" title="题库" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg bg-violet-500/10 px-3 py-2.5 text-sm font-medium text-slate-900 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.25)] transition dark:text-slate-100" aria-current="page">
+                <svg class="h-5 w-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="nav-label truncate">题库</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="比赛" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                <span class="nav-label truncate">比赛</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="提交记录" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M12 16h.01"/></svg>
+                <span class="nav-label truncate">提交记录</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="评测状态" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                <span class="nav-label truncate">评测状态</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="排行榜" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="nav-label truncate">排行榜</span>
+              </a>
+            </li>
+            <li>
+              <a href="user.html" title="用户中心" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="nav-label truncate">用户中心</span>
+              </a>
+            </li>
+          </ul>
+          <div class="nav-section-h mb-2 mt-4 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-400">社区</div>
+          <ul class="flex flex-col gap-1">
+            <li>
+              <a href="#" title="讨论区" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span class="nav-label truncate">讨论区</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="帮助 / FAQ" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="nav-label truncate">帮助 / FAQ</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer-btns mt-auto shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/[0.06] dark:bg-[#181c2a]">
+        <p class="sidebar-footer-prose mb-3 text-[0.8rem] leading-relaxed text-slate-500 dark:text-slate-400">判题机队列空闲 · 平均等待 &lt; 2s。支持 C/C++/Java/Python/Go。</p>
+        <button type="button" title="查看评测机状态" class="sidebar-footer-btn flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-transparent py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]">
+          <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+          <span class="footer-btn-label">查看评测机状态</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="flex h-full min-h-0 min-w-0 flex-col">
+      <header class="sticky top-0 z-10 flex flex-col border-b border-slate-200/80 bg-white/75 backdrop-blur-md dark:border-white/[0.06] dark:bg-[#0c0e14]/75">
+        <div class="flex flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap">
+          <button type="button" id="menuToggle" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 lg:hidden dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200" aria-label="打开菜单">
+            <svg class="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        <div class="order-3 flex min-w-0 flex-1 basis-full lg:order-none lg:basis-auto">
+          <div class="relative w-full max-w-[420px] flex-1 lg:max-w-[420px]">
+            <svg class="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="headerProblemSearch" type="search" placeholder="搜索题号、标题…" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none ring-violet-500/30 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#12151f] dark:text-slate-100 dark:placeholder:text-slate-500" />
+          </div>
+        </div>
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            id="themeToggle"
+            class="relative h-7 w-[52px] shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 transition hover:border-violet-400/50 dark:border-white/10 dark:bg-[#181c2a]"
+            aria-pressed="true"
+            aria-label="切换到浅色模式"
+            title="当前：深色 · 点击切换浅色"
+          >
+            <span class="pointer-events-none absolute inset-[3px] z-0 flex items-center justify-between px-[5px]" aria-hidden="true">
+              <svg class="h-3.5 w-3.5 text-violet-500 opacity-40 dark:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              <svg class="h-3.5 w-3.5 text-amber-500 opacity-100 dark:opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </span>
+            <span class="pointer-events-none absolute left-[3px] top-[3px] z-[1] h-[22px] w-[22px] translate-x-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-md shadow-amber-500/40 transition-transform duration-300 ease-[cubic-bezier(0.34,1.2,0.64,1)] dark:translate-x-0 dark:from-violet-500 dark:to-sky-500 dark:shadow-violet-500/30"></span>
+          </button>
+          <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:border-white/10 dark:bg-[#181c2a] dark:hover:bg-white/[0.06] dark:hover:text-slate-100" aria-label="通知">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <a href="login.html" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 no-underline transition hover:bg-slate-100 hover:text-slate-900 sm:inline-flex dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">登录</a>
+          <a href="user.html" class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3 text-sm font-medium text-slate-800 no-underline transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100 dark:hover:bg-white/[0.06] max-[600px]:pr-1">
+            <span class="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white">星</span>
+            <span class="max-[600px]:hidden">用户中心</span>
+          </a>
+        </div>
+        </div>
+        <div class="flex items-end gap-1 border-t border-slate-200/50 px-4 pb-2 pt-1.5 dark:border-white/[0.06]" aria-label="页面标签栏">
+          <div id="pageTabs" class="flex min-h-[36px] min-w-0 flex-1 items-end gap-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]" role="tablist" aria-label="已打开页面"></div>
+          <div class="flex shrink-0 items-end gap-1 self-end pb-0.5">
+            <button type="button" id="tabRefreshBtn" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06]" title="无感刷新当前页内容" aria-label="刷新当前页">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+            <div class="relative z-30">
+              <button type="button" id="tabAddBtn" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-lg font-medium leading-none text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06]" title="打开页面" aria-label="打开页面" aria-haspopup="true">+</button>
+              <div id="tabAddMenu" class="absolute right-0 top-full z-50 mt-1 hidden min-w-[180px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-[#12151f]" role="menu"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex min-h-0 flex-1 flex-col p-3 sm:p-4">
+        <div class="mx-auto w-full max-w-3xl flex-1 pb-16">
+          <div id="peLoading" class="flex min-h-[12rem] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 text-sm text-slate-500 dark:border-white/10 dark:bg-[#12151f]/50 dark:text-slate-400" role="status">加载题目…</div>
+          <div id="peError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"></div>
+
+          <div id="peRoot" class="hidden space-y-6">
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+              <a href="problems.html" class="inline-flex items-center gap-1.5 font-medium text-violet-600 no-underline transition hover:text-violet-500 dark:text-violet-400 dark:hover:text-violet-300">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                返回题库
+              </a>
+              <span class="text-slate-300 dark:text-slate-600">·</span>
+              <a id="peLinkView" href="#" class="font-medium text-violet-600 no-underline transition hover:text-violet-500 dark:text-violet-400 dark:hover:text-violet-300">查看题目</a>
+              <span id="peMockTag" class="hidden rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-300">演示数据</span>
+            </div>
+
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">编辑题目</h1>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">题目 ID：<span id="peIdLabel" class="font-mono text-slate-700 dark:text-slate-300"></span></p>
+            </div>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400">题目描述支持 Markdown。保存时将以 JSON 调用 <code class="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.7rem] dark:bg-white/10">PUT /api/problem/{id}</code>；测试用例列表会覆盖服务端原有数据。</p>
+
+            <form id="peForm" class="space-y-6">
+              <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark sm:p-5">
+                <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">基本信息</h2>
+                <div class="space-y-4">
+                  <div>
+                    <label for="peTitle" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">标题 <span class="text-rose-500">*</span></label>
+                    <input id="peTitle" name="title" required maxlength="500" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#0c0e14] dark:text-slate-100" />
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label for="peCategoryId" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">分类 ID</label>
+                      <input
+                        id="peCategoryId"
+                        name="categoryId"
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="如 1、10001（可选）"
+                        class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#0c0e14] dark:text-slate-100"
+                      />
+                      <p class="mt-1 text-xs text-slate-400">与后端分类表一致；留空则不传该字段。</p>
+                    </div>
+                    <div>
+                      <label for="peDifficulty" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">难度 <span class="text-rose-500">*</span></label>
+                      <select id="peDifficulty" name="difficulty" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#0c0e14] dark:text-slate-100">
+                        <option value="1">简单</option>
+                        <option value="2">中等</option>
+                        <option value="3">困难</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <label for="peTimeLimit" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">时间限制 (ms) <span class="text-rose-500">*</span></label>
+                      <input id="peTimeLimit" name="timeLimit" type="number" required min="1" step="1" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm dark:border-white/10 dark:bg-[#0c0e14]" />
+                    </div>
+                    <div>
+                      <label for="peMemoryLimit" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">内存限制 (MB) <span class="text-rose-500">*</span></label>
+                      <input id="peMemoryLimit" name="memoryLimit" type="number" required min="1" step="1" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-sm dark:border-white/10 dark:bg-[#0c0e14]" />
+                    </div>
+                    <div>
+                      <label for="peJudgeMode" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">判题模式 <span class="text-rose-500">*</span></label>
+                      <select id="peJudgeMode" name="judgeMode" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#0c0e14]">
+                        <option value="ACM">ACM</option>
+                        <option value="OI">OI</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label for="peStatus" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">题目状态 <span class="text-rose-500">*</span></label>
+                    <select id="peStatus" name="status" required class="w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#0c0e14]">
+                      <option value="0">0 · 草稿</option>
+                      <option value="1">1 · 发布</option>
+                      <option value="2">2 · 下线</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark sm:p-5">
+                <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">题面</h2>
+                <div class="space-y-4">
+                  <div>
+                    <label for="peContent" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">题目描述（Markdown） <span class="text-rose-500">*</span></label>
+                    <textarea id="peContent" name="content" required rows="10" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-[0.8125rem] leading-relaxed text-slate-900 outline-none focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#0c0e14] dark:text-slate-100"></textarea>
+                  </div>
+                  <div>
+                    <label for="peInputDesc" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">输入说明</label>
+                    <textarea id="peInputDesc" name="inputDesc" rows="4" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#0c0e14]"></textarea>
+                  </div>
+                  <div>
+                    <label for="peOutputDesc" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">输出说明</label>
+                    <textarea id="peOutputDesc" name="outputDesc" rows="4" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#0c0e14]"></textarea>
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label for="peSampleIn" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">样例输入</label>
+                      <textarea id="peSampleIn" name="sampleInput" rows="5" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-[0.8125rem] dark:border-white/10 dark:bg-[#0c0e14]"></textarea>
+                    </div>
+                    <div>
+                      <label for="peSampleOut" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">样例输出</label>
+                      <textarea id="peSampleOut" name="sampleOutput" rows="5" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-[0.8125rem] dark:border-white/10 dark:bg-[#0c0e14]"></textarea>
+                    </div>
+                  </div>
+                  <div>
+                    <label for="peHint" class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">提示</label>
+                    <textarea id="peHint" name="hint" rows="3" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#0c0e14]"></textarea>
+                  </div>
+                </div>
+              </section>
+
+              <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-card dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark sm:p-5">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">测试用例</h2>
+                  <button type="button" id="peAddCase" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]">添加用例</button>
+                </div>
+                <p class="mb-4 text-xs text-slate-500 dark:text-slate-400">提交保存时，下列用例会整体覆盖服务端原有测试数据。</p>
+                <div id="peCaseList" class="space-y-4"></div>
+              </section>
+
+              <div id="peFormError" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"></div>
+              <div id="peFormOk" class="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"></div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <button type="submit" id="peSubmit" class="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-500/20 transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50">保存修改</button>
+                <button type="button" id="peCancel" class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]">取消</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="app-shell.js" defer></script>
+  <script>
+    (function () {
+      var API_BASE = "/api/problem";
+
+      var state = { id: null, fromMock: false };
+
+      function getQueryId() {
+        try {
+          var q = new URLSearchParams(location.search);
+          var raw = q.get("id");
+          if (raw == null || raw === "") return null;
+          var n = parseInt(raw, 10);
+          if (isNaN(n)) return null;
+          return n;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function difficultyForForm(d, fromMock) {
+        var x = parseInt(d.difficulty, 10);
+        if (isNaN(x)) return "1";
+        if (fromMock) {
+          if (x <= 2) return "1";
+          if (x === 3) return "2";
+          return "3";
+        }
+        if (x >= 1 && x <= 3) return String(x);
+        if (x <= 2) return "1";
+        if (x === 3) return "2";
+        return "3";
+      }
+
+      function mockProblem(id) {
+        var lib = {
+          1000: {
+            id: 1000,
+            title: "P1001 A+B Problem",
+            categoryId: 1,
+            content: "给定两个整数 $A$ 和 $B$，请你输出它们的和。\n\n本题数据保证在 32 位有符号整数范围内。",
+            inputDesc: "一行两个整数 $A, B$，中间用单个空格分隔。",
+            outputDesc: "一行一个整数，表示 $A + B$。",
+            sampleInput: "1 2",
+            sampleOutput: "3",
+            hint: "",
+            difficulty: 1,
+            timeLimit: 1000,
+            memoryLimit: 128,
+            judgeMode: "ACM",
+            status: 1,
+            caseList: [
+              { caseNo: 1, inputData: "1 2", outputData: "3", score: 0, isSample: 1 },
+            ],
+          },
+        };
+        if (lib[id]) {
+          var o = {};
+          for (var k in lib[id]) o[k] = lib[id][k];
+          return o;
+        }
+        return {
+          id: id,
+          title: "题目 #" + id + "（演示）",
+          categoryId: 3,
+          content: "演示题面。\n\n接入 `GET /api/problem/{id}` 后自动填充。",
+          inputDesc: "",
+          outputDesc: "",
+          sampleInput: "0",
+          sampleOutput: "0",
+          hint: "",
+          difficulty: 2,
+          timeLimit: 1000,
+          memoryLimit: 256,
+          judgeMode: "ACM",
+          status: 1,
+          caseList: [{ caseNo: 1, inputData: "0", outputData: "0", score: 0, isSample: 1 }],
+        };
+      }
+
+      function deriveCaseList(d) {
+        var raw = d.caseList || d.cases || d.testCases;
+        if (raw && raw.length) return raw.slice();
+        return [
+          {
+            caseNo: 1,
+            inputData: d.sampleInput != null ? String(d.sampleInput) : "",
+            outputData: d.sampleOutput != null ? String(d.sampleOutput) : "",
+            score: 0,
+            isSample: 1,
+          },
+        ];
+      }
+
+      function renderCaseRow(c, index) {
+        c = c || {};
+        var inputData = c.inputData != null ? String(c.inputData) : "";
+        var outputData = c.outputData != null ? String(c.outputData) : "";
+        var score = c.score != null && c.score !== "" ? String(c.score) : "0";
+        var isSample = c.isSample === 1 || c.isSample === true;
+        var caseNo = c.caseNo != null ? String(c.caseNo) : String(index + 1);
+
+        var wrap = document.createElement("div");
+        wrap.className =
+          "rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-[#0c0e14]/80";
+        wrap.dataset.caseRow = "1";
+
+        var head = document.createElement("div");
+        head.className = "mb-3 flex flex-wrap items-center justify-between gap-2";
+        var title = document.createElement("span");
+        title.className = "text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400";
+        title.innerHTML = '用例 <span class="pe-case-index">' + (index + 1) + "</span>";
+        var rmBtn = document.createElement("button");
+        rmBtn.type = "button";
+        rmBtn.className =
+          "pe-case-remove rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-rose-600 transition hover:bg-rose-50 dark:border-white/10 dark:bg-[#181c2a] dark:hover:bg-rose-500/10";
+        rmBtn.textContent = "移除";
+        head.appendChild(title);
+        head.appendChild(rmBtn);
+
+        var grid = document.createElement("div");
+        grid.className = "grid gap-3 sm:grid-cols-2";
+
+        function fieldBlock(labelHtml, inputEl) {
+          var d = document.createElement("div");
+          var lab = document.createElement("label");
+          lab.className = "mb-1 block text-xs text-slate-500";
+          lab.innerHTML = labelHtml;
+          d.appendChild(lab);
+          d.appendChild(inputEl);
+          return d;
+        }
+
+        var taIn = document.createElement("textarea");
+        taIn.name = "inputData";
+        taIn.required = true;
+        taIn.rows = 4;
+        taIn.className =
+          "w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono text-[0.75rem] dark:border-white/10 dark:bg-[#12151f]";
+        taIn.value = inputData;
+
+        var taOut = document.createElement("textarea");
+        taOut.name = "outputData";
+        taOut.required = true;
+        taOut.rows = 4;
+        taOut.className = taIn.className;
+        taOut.value = outputData;
+
+        grid.appendChild(fieldBlock('输入数据 <span class="text-rose-500">*</span>', taIn));
+        grid.appendChild(fieldBlock('期望输出 <span class="text-rose-500">*</span>', taOut));
+
+        var row2 = document.createElement("div");
+        row2.className = "mt-3 grid gap-3 sm:grid-cols-3";
+
+        var inNo = document.createElement("input");
+        inNo.name = "caseNo";
+        inNo.type = "number";
+        inNo.min = "1";
+        inNo.step = "1";
+        inNo.className =
+          "w-full rounded border border-slate-200 bg-white px-2 py-1 font-mono text-sm dark:border-white/10 dark:bg-[#12151f]";
+        inNo.value = caseNo;
+
+        var inSc = document.createElement("input");
+        inSc.name = "score";
+        inSc.type = "number";
+        inSc.min = "0";
+        inSc.step = "1";
+        inSc.className = inNo.className;
+        inSc.value = score;
+
+        var sampWrap = document.createElement("div");
+        sampWrap.className = "flex items-end pb-1";
+        var labS = document.createElement("label");
+        labS.className = "flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300";
+        var chk = document.createElement("input");
+        chk.name = "isSample";
+        chk.type = "checkbox";
+        chk.className = "rounded border-slate-300";
+        if (isSample) chk.checked = true;
+        var sp = document.createElement("span");
+        sp.textContent = "样例 isSample";
+        labS.appendChild(chk);
+        labS.appendChild(sp);
+        sampWrap.appendChild(labS);
+
+        row2.appendChild(fieldBlock("序号 caseNo", inNo));
+        row2.appendChild(fieldBlock("分值 score", inSc));
+        row2.appendChild(sampWrap);
+
+        wrap.appendChild(head);
+        wrap.appendChild(grid);
+        wrap.appendChild(row2);
+
+        rmBtn.addEventListener("click", function () {
+          var list = document.getElementById("peCaseList");
+          if (list && list.children.length <= 1) {
+            alert("至少保留一条测试用例。");
+            return;
+          }
+          wrap.remove();
+          reindexCases();
+        });
+
+        return wrap;
+      }
+
+      function reindexCases() {
+        var list = document.getElementById("peCaseList");
+        if (!list) return;
+        var rows = list.querySelectorAll("[data-case-row]");
+        rows.forEach(function (row, i) {
+          var el = row.querySelector(".pe-case-index");
+          if (el) el.textContent = String(i + 1);
+        });
+      }
+
+      function fillCaseList(cases) {
+        var list = document.getElementById("peCaseList");
+        if (!list) return;
+        list.innerHTML = "";
+        (cases || []).forEach(function (c, i) {
+          list.appendChild(renderCaseRow(c, i));
+        });
+        if (!list.children.length) {
+          list.appendChild(renderCaseRow({}, 0));
+        }
+      }
+
+      function collectPayload() {
+        var list = document.getElementById("peCaseList");
+        var caseList = [];
+        if (list) {
+          var rows = list.querySelectorAll("[data-case-row]");
+          rows.forEach(function (row, idx) {
+            var inputData = row.querySelector('[name="inputData"]');
+            var outputData = row.querySelector('[name="outputData"]');
+            var caseNoEl = row.querySelector('[name="caseNo"]');
+            var scoreEl = row.querySelector('[name="score"]');
+            var sampleEl = row.querySelector('[name="isSample"]');
+            var cn = caseNoEl && caseNoEl.value !== "" ? parseInt(caseNoEl.value, 10) : idx + 1;
+            if (isNaN(cn)) cn = idx + 1;
+            var sc = scoreEl && scoreEl.value !== "" ? parseInt(scoreEl.value, 10) : 0;
+            if (isNaN(sc)) sc = 0;
+            caseList.push({
+              caseNo: cn,
+              inputData: inputData ? inputData.value : "",
+              outputData: outputData ? outputData.value : "",
+              score: sc,
+              isSample: sampleEl && sampleEl.checked ? 1 : 0,
+            });
+          });
+        }
+
+        var catEl = document.getElementById("peCategoryId");
+        var categoryId = null;
+        if (catEl && String(catEl.value).trim() !== "") {
+          var c = parseInt(catEl.value, 10);
+          if (!isNaN(c)) categoryId = c;
+        }
+
+        var payload = {
+          title: document.getElementById("peTitle").value.trim(),
+          content: document.getElementById("peContent").value,
+          inputDesc: document.getElementById("peInputDesc").value,
+          outputDesc: document.getElementById("peOutputDesc").value,
+          sampleInput: document.getElementById("peSampleIn").value,
+          sampleOutput: document.getElementById("peSampleOut").value,
+          hint: document.getElementById("peHint").value,
+          difficulty: parseInt(document.getElementById("peDifficulty").value, 10),
+          timeLimit: parseInt(document.getElementById("peTimeLimit").value, 10),
+          memoryLimit: parseInt(document.getElementById("peMemoryLimit").value, 10),
+          judgeMode: document.getElementById("peJudgeMode").value,
+          status: parseInt(document.getElementById("peStatus").value, 10),
+          caseList: caseList,
+        };
+        if (categoryId != null) payload.categoryId = categoryId;
+        return payload;
+      }
+
+      function fillForm(d, fromMock) {
+        state.fromMock = !!fromMock;
+        document.getElementById("peMockTag").classList.toggle("hidden", !fromMock);
+        document.getElementById("peIdLabel").textContent = d.id != null ? String(d.id) : "—";
+        var vid = document.getElementById("peLinkView");
+        if (vid && d.id != null) vid.href = "problem.html?id=" + encodeURIComponent(String(d.id));
+
+        document.getElementById("peTitle").value = d.title != null ? String(d.title) : "";
+        var cat = d.categoryId;
+        var catEl = document.getElementById("peCategoryId");
+        if (catEl) catEl.value = cat != null && cat !== "" ? String(cat) : "";
+        document.getElementById("peDifficulty").value = difficultyForForm(d, fromMock);
+        document.getElementById("peTimeLimit").value = d.timeLimit != null ? String(d.timeLimit) : "1000";
+        document.getElementById("peMemoryLimit").value = d.memoryLimit != null ? String(d.memoryLimit) : "128";
+        document.getElementById("peJudgeMode").value = d.judgeMode === "OI" ? "OI" : "ACM";
+        var st = parseInt(d.status, 10);
+        if (isNaN(st) || st < 0 || st > 2) st = 1;
+        document.getElementById("peStatus").value = String(st);
+
+        document.getElementById("peContent").value = d.content != null ? String(d.content) : "";
+        document.getElementById("peInputDesc").value = d.inputDesc != null ? String(d.inputDesc) : "";
+        document.getElementById("peOutputDesc").value = d.outputDesc != null ? String(d.outputDesc) : "";
+        document.getElementById("peSampleIn").value = d.sampleInput != null ? String(d.sampleInput) : "";
+        document.getElementById("peSampleOut").value = d.sampleOutput != null ? String(d.sampleOutput) : "";
+        document.getElementById("peHint").value = d.hint != null ? String(d.hint) : "";
+
+        fillCaseList(deriveCaseList(d));
+      }
+
+      function showLoadError(msg) {
+        document.getElementById("peLoading").classList.add("hidden");
+        var el = document.getElementById("peError");
+        el.textContent = msg;
+        el.classList.remove("hidden");
+      }
+
+      function showFormError(msg) {
+        var el = document.getElementById("peFormError");
+        var ok = document.getElementById("peFormOk");
+        if (ok) ok.classList.add("hidden");
+        if (!el) return;
+        if (msg) {
+          el.textContent = msg;
+          el.classList.remove("hidden");
+        } else el.classList.add("hidden");
+      }
+
+      function showFormOk(msg) {
+        var el = document.getElementById("peFormOk");
+        var err = document.getElementById("peFormError");
+        if (err) err.classList.add("hidden");
+        if (!el) return;
+        el.textContent = msg || "保存成功";
+        el.classList.remove("hidden");
+      }
+
+      function load() {
+        var id = getQueryId();
+        state.id = id;
+        if (id == null) {
+          showLoadError("缺少题目 id：请使用 problem-edit.html?id=题号 打开本页。");
+          document.title = "编辑题目 · CodeArena 评测";
+          return;
+        }
+
+        document.getElementById("peError").classList.add("hidden");
+        document.getElementById("peRoot").classList.add("hidden");
+        document.getElementById("peLoading").classList.remove("hidden");
+
+        fetch(API_BASE + "/" + encodeURIComponent(String(id)), { credentials: "same-origin" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then(function (body) {
+            if (body.code !== 0 && body.code !== undefined) throw new Error(body.message || "请求失败");
+            var data = body.data;
+            if (!data || data.id === undefined) throw new Error("响应无题目数据");
+            fillForm(data, false);
+            document.title = (data.title || "编辑题目") + " · CodeArena 评测";
+            try {
+              window.dispatchEvent(new CustomEvent("codearena:problem-loaded", { detail: { title: "编辑题目" } }));
+            } catch (e) {}
+            document.getElementById("peLoading").classList.add("hidden");
+            document.getElementById("peError").classList.add("hidden");
+            document.getElementById("peRoot").classList.remove("hidden");
+          })
+          .catch(function () {
+            fillForm(mockProblem(id), true);
+            document.title = "编辑题目 · CodeArena 评测";
+            try {
+              window.dispatchEvent(new CustomEvent("codearena:problem-loaded", { detail: { title: "编辑题目" } }));
+            } catch (e) {}
+            document.getElementById("peLoading").classList.add("hidden");
+            document.getElementById("peError").classList.add("hidden");
+            document.getElementById("peRoot").classList.remove("hidden");
+          });
+      }
+
+      function save() {
+        var id = state.id != null ? state.id : getQueryId();
+        if (id == null) return;
+        showFormError("");
+        showFormOk("");
+        var payload = collectPayload();
+        if (!payload.title) {
+          showFormError("请填写标题");
+          return;
+        }
+        var btn = document.getElementById("peSubmit");
+        if (btn) {
+          btn.disabled = true;
+        }
+        fetch(API_BASE + "/" + encodeURIComponent(String(id)), {
+          method: "PUT",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then(function (r) {
+            return r.text().then(function (t) {
+              var body = {};
+              if (t) {
+                try {
+                  body = JSON.parse(t);
+                } catch (e) {
+                  if (!r.ok) throw new Error(t.slice(0, 200) || "HTTP " + r.status);
+                  throw new Error("服务器返回非 JSON");
+                }
+              }
+              return { ok: r.ok, body: body };
+            });
+          })
+          .then(function (res) {
+            var body = res.body;
+            if (body.code !== 0 && body.code !== undefined) {
+              throw new Error(body.message || "保存失败");
+            }
+            showFormOk(body.message && body.message !== "ok" ? body.message : "保存成功");
+          })
+          .catch(function (e) {
+            showFormError(e.message || "网络或服务器错误");
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
+          });
+      }
+
+      document.getElementById("peForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        save();
+      });
+
+      document.getElementById("peCancel").addEventListener("click", function () {
+        var id = getQueryId();
+        if (id != null) location.href = "problem.html?id=" + encodeURIComponent(String(id));
+        else history.back();
+      });
+
+      document.getElementById("peAddCase").addEventListener("click", function () {
+        var list = document.getElementById("peCaseList");
+        if (!list) return;
+        list.appendChild(renderCaseRow({}, list.children.length));
+        reindexCases();
+      });
+
+      load();
+    })();
+  </script>
+</body>
+</html>

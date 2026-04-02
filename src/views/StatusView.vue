@@ -1,22 +1,160 @@
 <script setup lang="ts">
+import axios from 'axios'
+import { onMounted, reactive, ref } from 'vue'
+import { getJudgeOverview, getSubmissionPage, type JudgeOverviewVO, type SubmissionStatus, type SubmissionVO } from '../api/submission'
 import OjBadge from '../components/ui/OjBadge.vue'
+import OjButton from '../components/ui/OjButton.vue'
 import OjCard from '../components/ui/OjCard.vue'
 
-const submissions = [
-  { id: 58231, user: 'student01', problem: 'A + B Problem', language: 'Java', result: 'Accepted', time: '12 ms' },
-  { id: 58230, user: 'student02', problem: '最长上升子序列', language: 'C++', result: 'Wrong Answer', time: '8 ms' },
-  { id: 58229, user: 'student03', problem: '最短路模板', language: 'Python', result: 'Time Limit Exceeded', time: '1000 ms' },
-]
+const loading = ref(false)
+const errorMessage = ref('')
+const submissions = ref<SubmissionVO[]>([])
 
-function resultType(result: string) {
-  if (result === 'Accepted') return 'ac'
-  if (result === 'Wrong Answer') return 'wa'
-  if (result === 'Time Limit Exceeded') return 'tle'
-  if (result === 'Runtime Error') return 're'
-  if (result === 'Compilation Error') return 'ce'
-  if (result === 'Judging') return 'judging'
-  return 'neutral'
+const overview = reactive<JudgeOverviewVO>({
+  queueTaskCount: 0,
+  onlineNodeCount: 0,
+  todaySubmissionCount: 0,
+  serviceStatus: 'DOWN',
+})
+
+function resolveErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+    return backendMessage || error.message || '评测状态加载失败'
+  }
+  return error instanceof Error ? error.message : '评测状态加载失败'
 }
+
+function statusLabel(status: SubmissionStatus) {
+  switch (String(status || '').toUpperCase()) {
+    case 'WAITING':
+      return '排队中'
+    case 'JUDGING':
+      return '判题中'
+    case 'ACCEPTED':
+      return '通过'
+    case 'PARTIAL_ACCEPTED':
+      return '部分通过'
+    case 'WRONG_ANSWER':
+      return '答案错误'
+    case 'COMPILE_ERROR':
+      return '编译错误'
+    case 'RUNTIME_ERROR':
+      return '运行时错误'
+    case 'TIME_LIMIT_EXCEEDED':
+      return '超时'
+    case 'SYSTEM_ERROR':
+      return '系统错误'
+    default:
+      return status || '未知状态'
+  }
+}
+
+function statusTone(status: SubmissionStatus) {
+  switch (String(status || '').toUpperCase()) {
+    case 'WAITING':
+    case 'JUDGING':
+      return 'judging'
+    case 'ACCEPTED':
+      return 'ac'
+    case 'PARTIAL_ACCEPTED':
+      return 'warning'
+    case 'WRONG_ANSWER':
+      return 'wa'
+    case 'COMPILE_ERROR':
+      return 'ce'
+    case 'RUNTIME_ERROR':
+      return 're'
+    case 'TIME_LIMIT_EXCEEDED':
+      return 'tle'
+    case 'SYSTEM_ERROR':
+      return 'danger'
+    default:
+      return 'neutral'
+  }
+}
+
+function serviceStatusLabel(status: string) {
+  switch (String(status || '').toUpperCase()) {
+    case 'NORMAL':
+      return '正常'
+    case 'BUSY':
+      return '繁忙'
+    case 'DOWN':
+      return '异常'
+    default:
+      return status || '未知'
+  }
+}
+
+function serviceStatusTone(status: string) {
+  switch (String(status || '').toUpperCase()) {
+    case 'NORMAL':
+      return 'success'
+    case 'BUSY':
+      return 'accent'
+    case 'DOWN':
+      return 'danger'
+    default:
+      return 'neutral'
+  }
+}
+
+function userLabel(row: SubmissionVO) {
+  const realName = row.userRealName?.trim()
+  if (realName) {
+    return realName
+  }
+  return row.username?.trim() || '-'
+}
+
+function problemLabel(row: SubmissionVO) {
+  const title = row.problemTitle?.trim()
+  if (title) {
+    return title
+  }
+  return `#${row.problemId}`
+}
+
+function safeTimeLabel(value: number | undefined) {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) {
+    return '-'
+  }
+  return `${Number(value)} ms`
+}
+
+async function loadStatusData() {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    const [overviewRes, submissionRes] = await Promise.all([
+      getJudgeOverview(),
+      getSubmissionPage({ current: 1, pageSize: 10 }),
+    ])
+    if (overviewRes.code !== 0 || !overviewRes.data) {
+      throw new Error(overviewRes.message || '加载判题概览失败')
+    }
+    if (submissionRes.code !== 0 || !submissionRes.data) {
+      throw new Error(submissionRes.message || '加载最近提交失败')
+    }
+
+    overview.queueTaskCount = Number(overviewRes.data.queueTaskCount || 0)
+    overview.onlineNodeCount = Number(overviewRes.data.onlineNodeCount || 0)
+    overview.todaySubmissionCount = Number(overviewRes.data.todaySubmissionCount || 0)
+    overview.serviceStatus = String(overviewRes.data.serviceStatus || 'DOWN')
+
+    submissions.value = Array.isArray(submissionRes.data.records) ? submissionRes.data.records : []
+  } catch (error) {
+    errorMessage.value = resolveErrorMessage(error)
+    submissions.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadStatusData()
+})
 </script>
 
 <template>
@@ -27,39 +165,64 @@ function resultType(result: string) {
           <div class="oj-kicker">提交概览</div>
           <div>
             <h1 class="oj-page-title">评测状态</h1>
-            <p class="oj-page-subtitle">用于查看提交记录、运行结果和当前判题服务情况，后续可以继续接实时刷新接口。</p>
+            <p class="oj-page-subtitle">已接入后端实时统计，可查看队列、节点、今日提交量和最新提交结果。</p>
           </div>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           <OjCard tone="neutral" class="rounded-2xl">
             <div class="text-xs uppercase tracking-[0.12em] text-slate-400">队列任务</div>
-            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">37</div>
+            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.queueTaskCount }}</div>
           </OjCard>
           <OjCard tone="neutral" class="rounded-2xl">
             <div class="text-xs uppercase tracking-[0.12em] text-slate-400">在线节点</div>
-            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">4</div>
+            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.onlineNodeCount }}</div>
           </OjCard>
-          <OjCard tone="success" class="rounded-2xl">
+          <OjCard tone="neutral" class="rounded-2xl">
+            <div class="text-xs uppercase tracking-[0.12em] text-slate-400">今日提交量</div>
+            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.todaySubmissionCount }}</div>
+          </OjCard>
+          <OjCard :tone="serviceStatusTone(overview.serviceStatus)" class="rounded-2xl">
             <div class="text-xs uppercase tracking-[0.12em] text-slate-400">服务状态</div>
-            <div class="mt-2 text-lg font-semibold text-emerald-600 dark:text-emerald-300">正常</div>
+            <div class="mt-2 text-lg font-semibold">{{ serviceStatusLabel(overview.serviceStatus) }}</div>
           </OjCard>
         </div>
       </div>
     </OjCard>
 
     <OjCard tone="neutral" class="rounded-[20px]">
-      <el-table :data="submissions">
+      <div class="mb-3 flex items-center justify-between gap-3">
+        <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">最新提交</h2>
+        <OjButton tone="secondary" size="small" :loading="loading" @click="loadStatusData">刷新</OjButton>
+      </div>
+
+      <div v-if="errorMessage" class="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+        {{ errorMessage }}
+      </div>
+
+      <el-table v-loading="loading" :data="submissions">
         <el-table-column prop="id" label="提交号" width="120" />
-        <el-table-column prop="user" label="用户" width="140" />
-        <el-table-column prop="problem" label="题目" />
-        <el-table-column prop="language" label="语言" width="120" />
-        <el-table-column label="结果" width="180">
+        <el-table-column label="用户" width="150">
           <template #default="{ row }">
-            <OjBadge size="small" :tone="resultType(row.result)">{{ row.result }}</OjBadge>
+            {{ userLabel(row) }}
           </template>
         </el-table-column>
-        <el-table-column prop="time" label="耗时" width="120" />
+        <el-table-column label="题目">
+          <template #default="{ row }">
+            {{ problemLabel(row) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="language" label="语言" width="120" />
+        <el-table-column label="结果" width="190">
+          <template #default="{ row }">
+            <OjBadge size="small" :tone="statusTone(row.status)">{{ statusLabel(row.status) }}</OjBadge>
+          </template>
+        </el-table-column>
+        <el-table-column label="耗时" width="120">
+          <template #default="{ row }">
+            {{ safeTimeLabel(row.timeUsed) }}
+          </template>
+        </el-table-column>
       </el-table>
     </OjCard>
   </section>

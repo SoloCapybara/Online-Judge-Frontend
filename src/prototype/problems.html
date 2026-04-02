@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>题库 · CodeArena 评测</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("codearena-theme");
+        if (t === "light") document.documentElement.classList.remove("dark");
+        else if (t === "dark") document.documentElement.classList.add("dark");
+        else document.documentElement.classList.add("dark");
+      } catch (e) {
+        document.documentElement.classList.add("dark");
+      }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["DM Sans", "system-ui", "sans-serif"],
+            mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+          },
+          boxShadow: {
+            card: "0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08)",
+            "card-dark": "0 1px 2px rgba(0,0,0,0.28), 0 8px 24px rgba(0,0,0,0.18)",
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.08), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.05), transparent 45%);
+    }
+    .dark .bg-mesh {
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 92, 255, 0.22), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(56, 189, 248, 0.12), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 100%, rgba(124, 92, 255, 0.08), transparent 45%);
+    }
+    @media (min-width: 1024px) {
+      #layout.sidebar-collapsed .nav-label,
+      #layout.sidebar-collapsed .brand-text,
+      #layout.sidebar-collapsed .nav-section-h,
+      #layout.sidebar-collapsed .sidebar-footer-prose {
+        display: none !important;
+      }
+      #layout.sidebar-collapsed .sidebar-brand-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      #layout.sidebar-collapsed .sidebar-brand-row > a {
+        flex: none !important;
+        width: auto;
+        min-width: 0;
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      #layout.sidebar-collapsed #sidebarCollapseToggle {
+        flex-shrink: 0;
+      }
+      #layout.sidebar-collapsed .sidebar-nav-link {
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+      #layout.sidebar-collapsed .footer-btn-label {
+        display: none !important;
+      }
+      #layout.sidebar-collapsed .sidebar-footer-btns .sidebar-footer-btn {
+        width: 100%;
+        justify-content: center;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#e8ecf4] font-sans text-slate-900 antialiased transition-colors dark:bg-[#0c0e14] dark:text-slate-100">
+  <div class="bg-mesh pointer-events-none fixed inset-0 z-0" aria-hidden="true"></div>
+  <div id="overlay" class="fixed inset-0 z-[99] hidden bg-black/50 dark:bg-slate-950/40" aria-hidden="true"></div>
+
+  <div id="layout" style="--sb: 260px" class="relative z-10 grid min-h-screen grid-cols-1 lg:[grid-template-columns:var(--sb)_minmax(0,1fr)] transition-[grid-template-columns] duration-300 ease-out">
+    <script>
+      (function () {
+        var el = document.getElementById("layout");
+        if (!el) return;
+        try {
+          if (localStorage.getItem("codearena-sidebar-collapsed") === "1") {
+            el.style.setProperty("--sb", "72px");
+            el.classList.add("sidebar-collapsed");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <aside
+      id="sidebar"
+      class="flex h-screen max-h-[100dvh] flex-col gap-3 overflow-hidden border-slate-200/80 bg-white/90 px-3 py-3.5 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-white/[0.06] dark:bg-[#12151f]/85 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:self-start lg:shadow-none max-[960px]:fixed max-[960px]:left-0 max-[960px]:top-0 max-[960px]:z-[100] max-[960px]:w-[min(280px,88vw)] max-[960px]:-translate-x-[calc(100%+12px)] max-[960px]:border-r max-[960px]:shadow-2xl"
+      aria-label="站点导航"
+    >
+      <div class="sidebar-brand-row flex shrink-0 items-center gap-1.5">
+        <a href="index.html" class="sidebar-brand-link flex min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-1 text-inherit no-underline lg:min-h-0" title="CodeArena">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-sky-500 font-mono text-sm font-bold text-white shadow-lg shadow-violet-500/25">{ }</div>
+          <div class="brand-text flex min-w-0 flex-col leading-tight">
+            <strong class="text-[0.95rem] font-semibold tracking-tight">CodeArena</strong>
+            <span class="text-xs text-slate-500 dark:text-slate-400">在线评测</span>
+          </div>
+        </a>
+        <button type="button" id="sidebarCollapseToggle" class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06] lg:inline-flex" aria-expanded="true" aria-label="折叠侧栏" title="折叠侧栏">
+          <svg id="sidebarCollapseIcon" class="h-5 w-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 [-webkit-overflow-scrolling:touch] [scrollbar-color:rgba(148,163,184,0.45)_transparent] [scrollbar-width:thin]">
+        <nav aria-label="主要导航">
+          <div class="nav-section-h mb-2 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-400">练习</div>
+          <ul class="flex flex-col gap-1">
+            <li>
+              <a href="index.html" title="首页" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span class="nav-label truncate">首页</span>
+              </a>
+            </li>
+            <li>
+              <a href="problems.html" title="题库" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg bg-violet-500/10 px-3 py-2.5 text-sm font-medium text-slate-900 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.25)] transition dark:text-slate-100" aria-current="page">
+                <svg class="h-5 w-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span class="nav-label truncate">题库</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="比赛" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                <span class="nav-label truncate">比赛</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="提交记录" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M12 16h.01"/></svg>
+                <span class="nav-label truncate">提交记录</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="评测状态" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/></svg>
+                <span class="nav-label truncate">评测状态</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="排行榜" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span class="nav-label truncate">排行榜</span>
+              </a>
+            </li>
+            <li>
+              <a href="user.html" title="用户中心" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="nav-label truncate">用户中心</span>
+              </a>
+            </li>
+          </ul>
+          <div class="nav-section-h mb-2 mt-4 px-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-400">社区</div>
+          <ul class="flex flex-col gap-1">
+            <li>
+              <a href="#" title="讨论区" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                <span class="nav-label truncate">讨论区</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" title="帮助 / FAQ" class="sidebar-nav-link flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:translate-x-0.5 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">
+                <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="nav-label truncate">帮助 / FAQ</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer-btns mt-auto shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/[0.06] dark:bg-[#181c2a]">
+        <p class="sidebar-footer-prose mb-3 text-[0.8rem] leading-relaxed text-slate-500 dark:text-slate-400">判题机队列空闲 · 平均等待 &lt; 2s。支持 C/C++/Java/Python/Go。</p>
+        <button type="button" title="查看评测机状态" class="sidebar-footer-btn flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-transparent py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]">
+          <svg class="h-4 w-4 shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+          <span class="footer-btn-label">查看评测机状态</span>
+        </button>
+      </div>
+    </aside>
+
+    <div class="flex h-full min-h-0 min-w-0 flex-col">
+      <header class="sticky top-0 z-10 flex flex-col border-b border-slate-200/80 bg-white/75 backdrop-blur-md dark:border-white/[0.06] dark:bg-[#0c0e14]/75">
+        <div class="flex flex-wrap items-center gap-3 px-4 py-3 lg:flex-nowrap">
+          <button type="button" id="menuToggle" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 lg:hidden dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200" aria-label="打开菜单">
+            <svg class="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        <div class="order-3 flex min-w-0 flex-1 basis-full lg:order-none lg:basis-auto">
+          <div class="relative w-full max-w-[420px] flex-1 lg:max-w-[420px]">
+            <svg class="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="headerProblemSearch" type="search" placeholder="搜索题号、标题、标签…" autocomplete="off" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none ring-violet-500/30 placeholder:text-slate-400 focus:border-violet-500/50 focus:ring-4 dark:border-white/10 dark:bg-[#12151f] dark:text-slate-100 dark:placeholder:text-slate-500" />
+          </div>
+        </div>
+        <div class="ml-auto flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            id="themeToggle"
+            class="relative h-7 w-[52px] shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-100 transition hover:border-violet-400/50 dark:border-white/10 dark:bg-[#181c2a]"
+            aria-pressed="true"
+            aria-label="切换到浅色模式"
+            title="当前：深色 · 点击切换浅色"
+          >
+            <span class="pointer-events-none absolute inset-[3px] z-0 flex items-center justify-between px-[5px]" aria-hidden="true">
+              <svg class="h-3.5 w-3.5 text-violet-500 opacity-40 dark:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              <svg class="h-3.5 w-3.5 text-amber-500 opacity-100 dark:opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            </span>
+            <span class="pointer-events-none absolute left-[3px] top-[3px] z-[1] h-[22px] w-[22px] translate-x-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-md shadow-amber-500/40 transition-transform duration-300 ease-[cubic-bezier(0.34,1.2,0.64,1)] dark:translate-x-0 dark:from-violet-500 dark:to-sky-500 dark:shadow-violet-500/30"></span>
+          </button>
+          <button type="button" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:border-white/10 dark:bg-[#181c2a] dark:hover:bg-white/[0.06] dark:hover:text-slate-100" aria-label="通知">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <a href="login.html" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 no-underline transition hover:bg-slate-100 hover:text-slate-900 sm:inline-flex dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-slate-100">登录</a>
+          <a href="user.html" class="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1 pl-1 pr-3 text-sm font-medium text-slate-800 no-underline transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100 dark:hover:bg-white/[0.06] max-[600px]:pr-1">
+            <span class="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white">星</span>
+            <span class="max-[600px]:hidden">用户中心</span>
+          </a>
+        </div>
+        </div>
+        <div class="flex items-end gap-1 border-t border-slate-200/50 px-4 pb-2 pt-1.5 dark:border-white/[0.06]" aria-label="页面标签栏">
+          <div id="pageTabs" class="flex min-h-[36px] min-w-0 flex-1 items-end gap-1 overflow-x-auto pb-0.5 [-webkit-overflow-scrolling:touch]" role="tablist" aria-label="已打开页面"></div>
+          <div class="flex shrink-0 items-end gap-1 self-end pb-0.5">
+            <button type="button" id="tabRefreshBtn" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06]" title="无感刷新当前页内容" aria-label="刷新当前页">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+            <div class="relative z-30">
+              <button type="button" id="tabAddBtn" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-lg font-medium leading-none text-slate-600 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-300 dark:hover:bg-white/[0.06]" title="打开页面" aria-label="打开页面" aria-haspopup="true">+</button>
+              <div id="tabAddMenu" class="absolute right-0 top-full z-50 mt-1 hidden min-w-[180px] rounded-lg border border-slate-200 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-[#12151f]" role="menu"></div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex min-h-0 flex-1 flex-col p-3 sm:p-4">
+        <div class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-3">
+          <form id="problemFilters" class="shrink-0 rounded-xl border border-slate-200 bg-white/90 px-3 py-2.5 shadow-card backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#12151f]/90 dark:shadow-card-dark sm:px-3 sm:py-2" action="#" method="get">
+            <div class="flex flex-wrap items-end gap-x-2 gap-y-2 sm:gap-x-3">
+              <div class="min-w-[min(100%,12rem)] flex-1 sm:min-w-[10rem] sm:max-w-[14rem]">
+                <label for="filterTitle" class="mb-0.5 block text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">标题</label>
+                <input id="filterTitle" name="title" type="search" placeholder="关键词…" autocomplete="off" class="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100" />
+              </div>
+              <div class="w-[calc(50%-0.25rem)] min-w-0 sm:w-auto sm:min-w-[6.5rem]">
+                <label for="filterCategory" class="mb-0.5 block text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">分类</label>
+                <select id="filterCategory" name="categoryId" class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100">
+                  <option value="">全部</option>
+                  <option value="1">入门</option>
+                  <option value="2">动态规划</option>
+                  <option value="3">图论</option>
+                  <option value="4">数据结构</option>
+                  <option value="5">数学</option>
+                  <option value="6">字符串</option>
+                </select>
+              </div>
+              <div class="w-[calc(50%-0.25rem)] min-w-0 sm:w-auto sm:min-w-[6.5rem]">
+                <label for="filterDifficulty" class="mb-0.5 block text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">难度</label>
+                <select id="filterDifficulty" name="difficulty" class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100">
+                  <option value="">全部</option>
+                  <option value="1">入门</option>
+                  <option value="2">简单</option>
+                  <option value="3">中等</option>
+                  <option value="4">困难</option>
+                  <option value="5">挑战</option>
+                </select>
+              </div>
+              <div class="w-[calc(50%-0.25rem)] min-w-0 sm:w-auto sm:min-w-[6.5rem]">
+                <label for="filterStatus" class="mb-0.5 block text-[0.65rem] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">状态</label>
+                <select id="filterStatus" name="status" class="w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 outline-none ring-violet-500/20 focus:border-violet-500/50 focus:ring-2 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-100">
+                  <option value="">全部</option>
+                  <option value="0">公开</option>
+                  <option value="1">隐藏</option>
+                  <option value="2">维护中</option>
+                </select>
+              </div>
+              <div class="ml-auto flex shrink-0 gap-1.5">
+                <button type="submit" class="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white shadow-md shadow-violet-500/15 transition hover:bg-violet-500 dark:bg-violet-600 dark:hover:bg-violet-500">查询</button>
+                <button type="button" id="filterReset" class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]">重置</button>
+              </div>
+            </div>
+          </form>
+
+          <div id="problemListError" class="hidden shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200"></div>
+
+          <div class="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark">
+            <div id="problemListLoading" class="absolute inset-0 z-20 hidden items-center justify-center rounded-2xl bg-white/80 backdrop-blur-[1px] dark:bg-[#12151f]/80" role="status">
+              <span class="text-sm text-slate-500 dark:text-slate-400">加载中…</span>
+            </div>
+            <div id="problemListEmpty" class="absolute inset-0 z-10 hidden flex items-center justify-center rounded-2xl bg-white dark:bg-[#12151f]">
+              <p class="text-sm text-slate-500 dark:text-slate-400">没有符合条件的题目。</p>
+            </div>
+            <div class="problem-table-scroll h-[min(27.5rem,calc(100vh-11.25rem))] overflow-x-auto overflow-y-auto overscroll-contain [scrollbar-color:rgba(148,163,184,0.45)_transparent] [scrollbar-width:thin]">
+              <!-- border-separate + border-spacing-0：collapse 会破坏 thead 内 sticky，表头会随内容一起滚动 -->
+              <table class="w-full min-w-[1080px] border-separate border-spacing-0 text-left text-sm">
+                <thead>
+                  <tr>
+                    <th class="sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 font-mono text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">题目 ID</th>
+                    <th class="sticky top-0 z-10 min-w-[200px] border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">题目</th>
+                    <th class="sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">分类</th>
+                    <th class="sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">难度</th>
+                    <th class="sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">时间 / 内存</th>
+                    <th class="sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">提交 / AC</th>
+                    <th class="sticky top-0 z-10 min-w-[112px] border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">通过率</th>
+                    <th class="sticky top-0 z-10 hidden min-w-[8.5rem] whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400 lg:table-cell">创建者</th>
+                    <th class="sticky top-0 z-10 hidden min-w-[10.5rem] border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400 lg:table-cell">创建 / 更新</th>
+                    <th class="sticky top-0 z-10 whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400">评测</th>
+                    <th class="sticky top-0 z-10 hidden whitespace-nowrap border-b border-slate-200 bg-slate-50/95 px-3 py-2 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-500 backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#181c2a]/95 dark:text-slate-400 md:table-cell">状态</th>
+                  </tr>
+                </thead>
+                <tbody id="problemTableBody" class="divide-y divide-slate-200 text-slate-800 dark:divide-white/[0.06] dark:text-slate-200"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <nav id="problemPagination" class="flex shrink-0 flex-col gap-3 border-t border-slate-200/80 pt-3 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between sm:gap-4" aria-label="分页"></nav>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="app-shell.js" defer></script>
+  <script>
+    (function () {
+      var API = "/api/problem/page";
+      var USE_NESTED_QUERY = true;
+
+      var state = { current: 1, pageSize: 10, source: "mock" };
+
+      var CATEGORY = { 1: "入门", 2: "动态规划", 3: "图论", 4: "数据结构", 5: "数学", 6: "字符串" };
+      var DIFFICULTY = {
+        1: { t: "入门", c: "bg-emerald-500/12 text-emerald-800 dark:text-emerald-300" },
+        2: { t: "简单", c: "bg-sky-500/12 text-sky-800 dark:text-sky-300" },
+        3: { t: "中等", c: "bg-amber-500/12 text-amber-900 dark:text-amber-300" },
+        4: { t: "困难", c: "bg-orange-500/12 text-orange-900 dark:text-orange-300" },
+        5: { t: "挑战", c: "bg-rose-500/12 text-rose-900 dark:text-rose-300" },
+      };
+      var PROB_STATUS = { 0: { t: "公开", c: "bg-emerald-500/10 text-emerald-800 dark:text-emerald-400" }, 1: { t: "隐藏", c: "bg-slate-500/15 text-slate-700 dark:text-slate-300" }, 2: { t: "维护", c: "bg-amber-500/15 text-amber-800 dark:text-amber-400" } };
+
+      function escapeHtml(s) {
+        if (s == null || s === undefined) return "";
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function fmtPct(n) {
+        if (n == null || n === "" || isNaN(Number(n))) return "—";
+        var v = Number(n);
+        if (v <= 1 && v >= 0) v = v * 100;
+        return v.toFixed(1) + "%";
+      }
+
+      function fmtTime(iso) {
+        if (!iso) return "—";
+        try {
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return String(iso);
+          return d.toLocaleString("zh-CN", { dateStyle: "medium", timeStyle: "short" });
+        } catch (e) {
+          return String(iso);
+        }
+      }
+
+      function mockRecords() {
+        var titles = [
+          ["P1001", "A+B Problem"],
+          ["P1048", "采药"],
+          ["P3379", "模板 · 最近公共祖先"],
+          ["P3384", "重链剖分"],
+          ["P2103", "区间 GCD"],
+          ["P3842", "树上的路径"],
+          ["P2002", "树状数组"],
+          ["P3806", "模板 · 点分治"],
+          ["P4513", "小白逛公园"],
+          ["P4721", "模板 · 支配树"],
+          ["P5490", "模板 · 线段树分裂"],
+          ["P3203", "弹飞绵羊"],
+          ["P3808", "AC 自动机（简单版）"],
+          ["P4555", "最长双回文串"],
+          ["P4719", "模板 · 矩阵树定理"],
+        ];
+        var rows = [];
+        var base = 1000;
+        for (var i = 0; i < titles.length; i++) {
+          var id = base + i * 17;
+          var cat = (i % 6) + 1;
+          var diff = (i % 5) + 1;
+          var sub = 800 + i * 133;
+          var ac = Math.floor(sub * (0.25 + (i % 7) * 0.08));
+          rows.push({
+            id: id,
+            title: titles[i][0] + " " + titles[i][1],
+            categoryId: cat,
+            difficulty: diff,
+            timeLimit: 1000 + (i % 3) * 500,
+            memoryLimit: 128 + (i % 4) * 64,
+            judgeMode: i % 2 === 0 ? "OI" : "ACM",
+            submitCount: sub,
+            acceptCount: ac,
+            acceptRate: ac / sub,
+            status: i % 9 === 0 ? 1 : 0,
+            creatorId: 2038599968272380000 + i,
+            createTime: "2024-06-01T08:00:00",
+            updateTime: "2026-03-" + ((i % 28) + 1).toString().padStart(2, "0") + "T14:22:00",
+          });
+        }
+        return rows;
+      }
+
+      var ALL_MOCK = mockRecords();
+
+      function filterMockRows(q) {
+        return ALL_MOCK.filter(function (r) {
+          if (q.title && r.title.toLowerCase().indexOf(q.title.toLowerCase()) === -1) return false;
+          if (q.categoryId && String(r.categoryId) !== String(q.categoryId)) return false;
+          if (q.difficulty !== "" && q.difficulty != null && String(r.difficulty) !== String(q.difficulty)) return false;
+          if (q.status !== "" && q.status != null && String(r.status) !== String(q.status)) return false;
+          return true;
+        });
+      }
+
+      function buildQuery(q) {
+        var p = new URLSearchParams();
+        if (USE_NESTED_QUERY) {
+          p.set("queryRequest.current", String(q.current));
+          p.set("queryRequest.pageSize", String(q.pageSize));
+          if (q.title) p.set("queryRequest.title", q.title);
+          if (q.categoryId) p.set("queryRequest.categoryId", String(q.categoryId));
+          if (q.difficulty !== "" && q.difficulty != null) p.set("queryRequest.difficulty", String(q.difficulty));
+          if (q.status !== "" && q.status != null) p.set("queryRequest.status", String(q.status));
+        } else {
+          p.set("current", String(q.current));
+          p.set("pageSize", String(q.pageSize));
+          if (q.title) p.set("title", q.title);
+          if (q.categoryId) p.set("categoryId", String(q.categoryId));
+          if (q.difficulty !== "" && q.difficulty != null) p.set("difficulty", String(q.difficulty));
+          if (q.status !== "" && q.status != null) p.set("status", String(q.status));
+        }
+        return p.toString();
+      }
+
+      function readFilters() {
+        var ft = document.getElementById("filterTitle");
+        var fc = document.getElementById("filterCategory");
+        var fd = document.getElementById("filterDifficulty");
+        var fs = document.getElementById("filterStatus");
+        return {
+          title: ft && ft.value ? ft.value.trim() : "",
+          categoryId: fc && fc.value ? fc.value : "",
+          difficulty: fd ? fd.value : "",
+          status: fs ? fs.value : "",
+        };
+      }
+
+      function syncHeaderSearch() {
+        var h = document.getElementById("headerProblemSearch");
+        var ft = document.getElementById("filterTitle");
+        if (h && ft) h.value = ft.value;
+      }
+
+      function syncFilterFromHeader() {
+        var h = document.getElementById("headerProblemSearch");
+        var ft = document.getElementById("filterTitle");
+        if (h && ft) ft.value = h.value;
+      }
+
+      function renderRows(records) {
+        var tb = document.getElementById("problemTableBody");
+        if (!tb) return;
+        tb.innerHTML = "";
+        records.forEach(function (r) {
+          var tr = document.createElement("tr");
+          tr.className = "transition hover:bg-violet-500/[0.04] dark:hover:bg-white/[0.03]";
+          var diff = DIFFICULTY[r.difficulty] || { t: "—", c: "bg-slate-500/10 text-slate-600 dark:text-slate-400" };
+          var cat = CATEGORY[r.categoryId] || "—";
+          var st = PROB_STATUS[r.status] || PROB_STATUS[0];
+          var pct = fmtPct(r.acceptRate);
+          var barW = 0;
+          if (r.acceptRate != null && !isNaN(Number(r.acceptRate))) {
+            var raw = Number(r.acceptRate);
+            if (raw >= 0 && raw <= 1) barW = Math.min(100, Math.round(raw * 100));
+            else barW = Math.min(100, Math.round(raw));
+          }
+          tr.innerHTML =
+            '<td class="whitespace-nowrap px-3 py-2 font-mono text-[0.8rem] text-slate-500 dark:text-slate-400">' +
+            escapeHtml(r.id) +
+            "</td>" +
+            '<td class="max-w-[min(360px,40vw)] px-3 py-2">' +
+            '<a href="problem.html?id=' +
+            encodeURIComponent(String(r.id)) +
+            '" class="font-medium text-violet-700 underline-offset-4 transition hover:text-violet-600 hover:underline dark:text-violet-300 dark:hover:text-violet-200">' +
+            escapeHtml(r.title) +
+            "</a></td>" +
+            '<td class="whitespace-nowrap px-3 py-2 text-slate-600 dark:text-slate-300">' +
+            escapeHtml(cat) +
+            "</td>" +
+            '<td class="whitespace-nowrap px-3 py-2"><span class="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold ' +
+            diff.c +
+            '">' +
+            escapeHtml(diff.t) +
+            "</span></td>" +
+            '<td class="whitespace-nowrap px-3 py-2 font-mono text-[0.75rem] text-slate-500 dark:text-slate-400">' +
+            escapeHtml(r.timeLimit) +
+            " ms · " +
+            escapeHtml(r.memoryLimit) +
+            " MB</td>" +
+            '<td class="whitespace-nowrap px-3 py-2 font-mono text-[0.75rem] tabular-nums">' +
+            escapeHtml(r.submitCount) +
+            " / " +
+            escapeHtml(r.acceptCount) +
+            "</td>" +
+            '<td class="px-3 py-2">' +
+            '<div class="flex items-center gap-2">' +
+            '<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10" title="' +
+            escapeHtml(pct) +
+            '">' +
+            '<div class="h-full rounded-full bg-gradient-to-r from-violet-500 to-sky-500" style="width:' +
+            barW +
+            '%"></div></div>' +
+            '<span class="w-12 shrink-0 text-right font-mono text-xs text-slate-600 dark:text-slate-400">' +
+            escapeHtml(pct) +
+            "</span></div></td>" +
+            '<td class="hidden max-w-[9rem] truncate px-3 py-2 font-mono text-[0.65rem] text-slate-600 dark:text-slate-300 lg:table-cell" title="' +
+            escapeHtml(r.creatorId != null ? String(r.creatorId) : "") +
+            '">' +
+            escapeHtml(r.creatorId != null ? String(r.creatorId) : "—") +
+            "</td>" +
+            '<td class="hidden min-w-[10rem] px-3 py-2 text-[0.65rem] leading-snug text-slate-600 dark:text-slate-300 lg:table-cell">' +
+            '<div class="space-y-0.5">' +
+            '<div><span class="text-slate-400 dark:text-slate-500">创建</span> ' +
+            escapeHtml(fmtTime(r.createTime)) +
+            "</div>" +
+            '<div><span class="text-slate-400 dark:text-slate-500">更新</span> ' +
+            escapeHtml(fmtTime(r.updateTime)) +
+            "</div></div></td>" +
+            '<td class="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-500 dark:text-slate-400">' +
+            escapeHtml(r.judgeMode || "—") +
+            "</td>" +
+            '<td class="hidden whitespace-nowrap px-3 py-2 md:table-cell"><span class="inline-flex rounded-md px-2 py-0.5 text-xs font-semibold ' +
+            st.c +
+            '">' +
+            escapeHtml(st.t) +
+            "</span></td>";
+          tb.appendChild(tr);
+        });
+      }
+
+      function renderPagination(data) {
+        var nav = document.getElementById("problemPagination");
+        if (!nav) return;
+        var cur = Number(data.current) || 1;
+        var total = Number(data.total) || 0;
+        var size = Number(data.size) || state.pageSize;
+        var pages = Number(data.pages) || Math.ceil(total / size) || 1;
+        var start = total === 0 ? 0 : (cur - 1) * size + 1;
+        var end = Math.min(cur * size, total);
+        nav.innerHTML = "";
+        var left = document.createElement("div");
+        left.className = "flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm text-slate-600 dark:text-slate-300";
+        if (total > 0) {
+          left.innerHTML =
+            '<span>共 <strong class="font-semibold tabular-nums text-slate-900 dark:text-slate-100">' +
+            total.toLocaleString() +
+            "</strong> 条</span>" +
+            '<span class="text-slate-300 dark:text-slate-600">·</span>' +
+            '<span>共 <strong class="font-semibold tabular-nums text-slate-900 dark:text-slate-100">' +
+            pages +
+            "</strong> 页</span>" +
+            '<span class="text-slate-300 dark:text-slate-600">·</span>' +
+            "<span>第 " +
+            start +
+            "–" +
+            end +
+            " 条</span>";
+        } else {
+          left.innerHTML = '<span class="text-slate-500 dark:text-slate-400">共 <strong class="tabular-nums">0</strong> 条</span>';
+        }
+        if (state.source === "mock") {
+          var note = document.createElement("span");
+          note.className = "ml-0 w-full text-xs text-slate-400 sm:ml-2 sm:w-auto dark:text-slate-500";
+          note.textContent = "（演示数据）";
+          left.appendChild(note);
+        }
+        nav.appendChild(left);
+
+        var wrap = document.createElement("div");
+        wrap.className = "flex flex-wrap items-center justify-center gap-1 sm:justify-end";
+
+        function addBtn(label, disabled, page, primary) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.textContent = label;
+          b.disabled = !!disabled;
+          b.className =
+            "min-w-[2.25rem] rounded-lg border px-2.5 py-1.5 text-sm font-medium transition " +
+            (primary
+              ? "border-violet-500/40 bg-violet-500/10 text-violet-800 dark:text-violet-200"
+              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:bg-[#181c2a] dark:text-slate-200 dark:hover:bg-white/[0.06]") +
+            (disabled ? " cursor-not-allowed opacity-40" : "");
+          if (!disabled && page != null) {
+            b.addEventListener("click", function () {
+              state.current = page;
+              load();
+            });
+          }
+          return b;
+        }
+
+        wrap.appendChild(addBtn("上一页", cur <= 1, cur - 1, false));
+        var windowSize = 5;
+        var from = Math.max(1, cur - Math.floor(windowSize / 2));
+        var to = Math.min(pages, from + windowSize - 1);
+        from = Math.max(1, to - windowSize + 1);
+        for (var p = from; p <= to; p++) {
+          wrap.appendChild(addBtn(String(p), false, p, p === cur));
+        }
+        wrap.appendChild(addBtn("下一页", cur >= pages, cur + 1, false));
+        nav.appendChild(wrap);
+      }
+
+      function showLoading(on) {
+        var el = document.getElementById("problemListLoading");
+        if (!el) return;
+        el.classList.toggle("hidden", !on);
+        el.classList.toggle("flex", on);
+      }
+
+      function showError(msg) {
+        var el = document.getElementById("problemListError");
+        if (!el) return;
+        if (msg) {
+          el.textContent = msg;
+          el.classList.remove("hidden");
+        } else el.classList.add("hidden");
+      }
+
+      function load() {
+        var filters = readFilters();
+        var q = Object.assign({ current: state.current, pageSize: state.pageSize }, filters);
+        showError("");
+        showLoading(true);
+        var url = API + "?" + buildQuery(q);
+
+        fetch(url, { credentials: "same-origin" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then(function (body) {
+            if (body.code !== 0 && body.code !== undefined) throw new Error(body.message || "业务错误");
+            var data = body.data;
+            if (!data || !data.records) throw new Error("响应格式异常");
+            state.source = "api";
+            renderPageData(data);
+          })
+          .catch(function () {
+            state.source = "mock";
+            var filtered = filterMockRows(filters);
+            var total = filtered.length;
+            var size = state.pageSize;
+            var pages = Math.max(1, Math.ceil(total / size));
+            if (state.current > pages) state.current = pages;
+            var start = (state.current - 1) * size;
+            var slice = filtered.slice(start, start + size);
+            renderPageData({
+              current: state.current,
+              total: total,
+              size: size,
+              pages: pages,
+              records: slice,
+            });
+          })
+          .finally(function () {
+            showLoading(false);
+          });
+      }
+
+      function renderPageData(data) {
+        var records = data.records || [];
+        var empty = document.getElementById("problemListEmpty");
+        if (empty) empty.classList.toggle("hidden", records.length > 0);
+        renderRows(records);
+        renderPagination(data);
+      }
+
+      var form = document.getElementById("problemFilters");
+      if (form) {
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          state.current = 1;
+          syncHeaderSearch();
+          load();
+        });
+      }
+
+      var resetBtn = document.getElementById("filterReset");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", function () {
+          ["filterTitle", "filterCategory", "filterDifficulty", "filterStatus"].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (el.tagName === "SELECT") el.selectedIndex = 0;
+            else el.value = "";
+          });
+          var h = document.getElementById("headerProblemSearch");
+          if (h) h.value = "";
+          state.current = 1;
+          load();
+        });
+      }
+
+      var hs = document.getElementById("headerProblemSearch");
+      if (hs) {
+        hs.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            syncFilterFromHeader();
+            state.current = 1;
+            load();
+          }
+        });
+      }
+
+      load();
+    })();
+  </script>
+</body>
+</html>

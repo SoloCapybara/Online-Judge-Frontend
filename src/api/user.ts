@@ -2,7 +2,7 @@ import request from '../utils/request'
 import type { BaseResponse } from './auth'
 
 export interface UserProfileVO {
-  id: number
+  id: string
   username: string
   realName: string
   studentNo: string

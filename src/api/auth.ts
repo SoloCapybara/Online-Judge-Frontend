@@ -15,7 +15,7 @@ export interface UserRegisterRequest {
 }
 
 export interface RegisterResult {
-  userId: number
+  userId: string
 }
 
 export async function registerUser(payload: UserRegisterRequest): Promise<BaseResponse<RegisterResult>> {
@@ -29,7 +29,7 @@ export interface UserLoginRequest {
 }
 
 export interface LoginUserInfo {
-  id: number
+  id: string
   username: string
   realName: string
   avatar: string

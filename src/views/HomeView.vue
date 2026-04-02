@@ -46,16 +46,16 @@ const weeklyBars = [
 const announcements = [
   { title: '春季积分赛 #3 进行中 · Rated', desc: '截止今晚 22:00 · ICPC 赛制' },
   { title: '新题 P3842「树上的路径」已公开', desc: '难度：省选 / 图论 · 树链剖分' },
-  { title: 'Python 3.12 评测镜像已切换', desc: '1 小时前 · 系统公告' },
+  { title: 'Python 3.14.2 评测镜像已切换', desc: '1 小时前 · 系统公告' },
   { title: '下周模拟赛：NOI 2025 真题复现', desc: '报名开放中 · 4 月 5 日 14:00' },
 ]
 
 const submissions = [
   { id: '#928441', user: 'star_x', problem: 'P2103 区间 GCD', lang: 'C++17', result: 'AC', cost: '92ms / 15.2MB', time: '刚刚' },
-  { id: '#928440', user: 'mintea', problem: 'P3842 树上的路径', lang: 'Python 3', result: '评测中', cost: '—', time: '12s 前' },
-  { id: '#928438', user: 'visitor_07', problem: 'P1001 A+B Problem', lang: 'Java 21', result: 'WA', cost: '4ms / 48MB', time: '1 分钟前' },
-  { id: '#928435', user: 'algo_fan', problem: 'P3379 模板·最近公共祖先', lang: 'C++20', result: 'TLE', cost: '1000ms / 32MB', time: '3 分钟前' },
-  { id: '#928431', user: 'newbie_2026', problem: 'P1048 采药', lang: 'Go 1.22', result: 'RE', cost: '0ms / 0MB', time: '6 分钟前' },
+  { id: '#928440', user: 'mintea', problem: 'P3842 树上的路径', lang: 'Python 3.14.2', result: '评测中', cost: '—', time: '12s 前' },
+  { id: '#928438', user: 'visitor_07', problem: 'P1001 A+B Problem', lang: 'Java 17', result: 'WA', cost: '4ms / 48MB', time: '1 分钟前' },
+  { id: '#928435', user: 'algo_fan', problem: 'P3379 模板·最近公共祖先', lang: 'C++17', result: 'TLE', cost: '1000ms / 32MB', time: '3 分钟前' },
+  { id: '#928431', user: 'newbie_2026', problem: 'P1048 采药', lang: 'C17', result: 'RE', cost: '0ms / 0MB', time: '6 分钟前' },
 ]
 
 function resultTone(result: string) {
