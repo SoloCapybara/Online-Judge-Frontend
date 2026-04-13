@@ -18,6 +18,8 @@ let handlingAuthInvalid = false
 function clearLocalSession() {
   localStorage.removeItem('oj-token')
   localStorage.removeItem('oj-role')
+  localStorage.removeItem('oj-user-id')
+  localStorage.removeItem('oj-username')
   localStorage.removeItem('oj-display-name')
   localStorage.removeItem('oj-avatar')
 }

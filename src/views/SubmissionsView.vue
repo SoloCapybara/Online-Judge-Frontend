@@ -2,9 +2,9 @@
 import axios from 'axios'
 import { onMounted, reactive, ref } from 'vue'
 import { getSubmissionPage, type SubmissionStatus, type SubmissionVO } from '../api/submission'
+import OjProblemPicker from '../components/problem/OjProblemPicker.vue'
 import OjBadge from '../components/ui/OjBadge.vue'
 import OjButton from '../components/ui/OjButton.vue'
-import OjInput from '../components/ui/OjInput.vue'
 import OjPagination from '../components/ui/OjPagination.vue'
 import OjSelect from '../components/ui/OjSelect.vue'
 import OjTableLayout from '../components/ui/OjTableLayout.vue'
@@ -126,6 +126,19 @@ function problemLabel(row: SubmissionVO) {
   return `#${row.problemId}`
 }
 
+function sourceLabel(row: SubmissionVO) {
+  const isHomework = String(row.contestType || '').toUpperCase() === 'HOMEWORK'
+  const prefix = isHomework ? '作业' : '比赛'
+  const title = row.contestTitle?.trim()
+  if (title) {
+    return `${prefix}：${title}`
+  }
+  if (row.contestId) {
+    return `${prefix}：#${row.contestId}`
+  }
+  return '题库练习'
+}
+
 function userLabel(row: SubmissionVO) {
   const realName = row.userRealName?.trim()
   if (realName) {
@@ -197,6 +210,11 @@ function handleSearch() {
   void loadSubmissions(1)
 }
 
+function handleProblemFilterChange() {
+  pageState.current = 1
+  void loadSubmissions(1)
+}
+
 function handleReset() {
   filterForm.status = ''
   filterForm.language = ''
@@ -214,7 +232,7 @@ onMounted(() => {
   <section class="oj-page">
     <OjTableLayout :loading="loading" loading-text="加载提交记录中...">
       <template #filters>
-        <form class="oj-table-filter-grid grid gap-2 lg:grid-cols-[136px_136px_180px_auto]" @submit.prevent="handleSearch">
+        <form class="oj-table-filter-grid grid gap-2 lg:grid-cols-[136px_136px_260px_auto]" @submit.prevent="handleSearch">
           <OjSelect
             v-model="filterForm.status"
             :options="statusOptions"
@@ -227,11 +245,11 @@ onMounted(() => {
             placeholder="语言"
           />
 
-          <OjInput
+          <OjProblemPicker
             v-model="filterForm.problemId"
-            clearable
-            placeholder="题目ID（如 10001）"
-            @keyup.enter="handleSearch"
+            :disabled="loading"
+            placeholder="选择题目筛选"
+            @update:model-value="handleProblemFilterChange"
           />
 
           <div class="flex items-center gap-2">
@@ -259,6 +277,13 @@ onMounted(() => {
         <el-table-column label="题目">
           <template #default="{ row }">
             {{ problemLabel(row) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="来源" width="220" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="submission-cell-ellipsis" :title="sourceLabel(row)">
+              {{ sourceLabel(row) }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column prop="language" label="语言" width="130" />

@@ -44,6 +44,8 @@ export interface SubmissionVO {
   problemId: string
   problemTitle?: string
   contestId?: string
+  contestTitle?: string
+  contestType?: 'CONTEST' | 'HOMEWORK' | string
   language: string
   status: SubmissionStatus
   timeUsed?: number

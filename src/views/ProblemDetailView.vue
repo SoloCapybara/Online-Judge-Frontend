@@ -89,6 +89,17 @@ const problemId = computed(() => {
   return typeof raw === 'string' ? raw.trim() : ''
 })
 
+const contestId = computed(() => {
+  const raw = route.query.contestId
+  if (Array.isArray(raw)) {
+    return String(raw[0] ?? '').trim()
+  }
+  return typeof raw === 'string' ? raw.trim() : ''
+})
+
+const inContestMode = computed(() => Boolean(contestId.value))
+const backButtonText = computed(() => (inContestMode.value ? '返回比赛' : '返回题库'))
+
 const codeFileName = computed(() => CODE_FILE_NAMES[language.value])
 
 const difficultyMeta = computed(() => {
@@ -248,8 +259,27 @@ function resolveExecuteTimeMs(result?: RunCodeResponse | null) {
   return Number.isFinite(candidate) && candidate >= 0 ? Math.floor(candidate) : 0
 }
 
+function draftOwnerScope() {
+  const userId = localStorage.getItem('oj-user-id')?.trim()
+  if (userId) {
+    return `uid:${userId}`
+  }
+  const token = localStorage.getItem('oj-token')?.trim()
+  if (token) {
+    return `token:${token}`
+  }
+  return 'guest'
+}
+
+function draftSceneScope() {
+  if (contestId.value) {
+    return `contest:${contestId.value}`
+  }
+  return 'practice'
+}
+
 function draftKey(field: 'lang' | 'code') {
-  return `oj-problem-draft:${problemId.value}:${field}`
+  return `oj-problem-draft:${draftOwnerScope()}:${draftSceneScope()}:${problemId.value}:${field}`
 }
 
 function saveDraft() {
@@ -440,6 +470,7 @@ async function handleSubmit() {
   try {
     const response = await createSubmission({
       problemId: id,
+      contestId: contestId.value || undefined,
       language: RUN_LANGUAGE_MAP[language.value],
       sourceCode: sourceCode.value,
     })
@@ -662,6 +693,10 @@ function getTerminalHeightBounds(shellHeightOverride?: number) {
 }
 
 function goBackToList() {
+  if (contestId.value) {
+    void router.push({ name: 'contest-detail', params: { id: contestId.value } })
+    return
+  }
   void router.push('/problems')
 }
 
@@ -752,7 +787,7 @@ onMounted(() => {
       <p>{{ loadError }}</p>
       <div class="problem-detail-error-actions">
         <OjButton tone="info" size="small" @click="loadProblemDetail">重试</OjButton>
-        <OjButton tone="secondary" size="small" @click="goBackToList">返回题库</OjButton>
+        <OjButton tone="secondary" size="small" @click="goBackToList">{{ backButtonText }}</OjButton>
       </div>
     </div>
 
@@ -766,7 +801,7 @@ onMounted(() => {
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
-          返回题库
+          {{ backButtonText }}
         </button>
       </div>
 
@@ -779,6 +814,7 @@ onMounted(() => {
               <OjBadge size="small" tone="primary">{{ categoryText }}</OjBadge>
               <OjBadge size="small" tone="neutral">{{ judgeModeText }}</OjBadge>
               <OjBadge size="small" :tone="statusMeta.tone">{{ statusMeta.label }}</OjBadge>
+              <OjBadge v-if="inContestMode" size="small" tone="warning">比赛模式 #{{ contestId }}</OjBadge>
             </div>
           </div>
 
@@ -947,6 +983,7 @@ onMounted(() => {
             </div>
 
             <div ref="editorFooterRef" class="problem-editor-footer">
+              <span v-if="inContestMode" class="problem-submit-context">当前提交将计入比赛 #{{ contestId }}</span>
               <OjButton :tone="runButtonTone" size="small" :loading="runLoading" @click="handleRun">自测运行</OjButton>
               <OjButton tone="primary" size="small" :loading="submitLoading" :disabled="runLoading" @click="handleSubmit">提交评测</OjButton>
             </div>
@@ -1158,9 +1195,20 @@ onMounted(() => {
   padding: 10px 12px;
 }
 
+.problem-submit-context {
+  margin-right: auto;
+  align-self: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
 :root[data-theme='dark'] .problem-editor-footer {
   border-top-color: rgba(0, 0, 0, 0.3);
   background: #252526;
+}
+
+:root[data-theme='dark'] .problem-submit-context {
+  color: #94a3b8;
 }
 
 .problem-run-panel {

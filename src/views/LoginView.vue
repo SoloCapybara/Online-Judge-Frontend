@@ -93,13 +93,29 @@ function resolveRoleByCodes(roleCodes: string[] | undefined): UserRole {
   return 'student'
 }
 
-function applyUserSession(nextToken: string, nextRole: UserRole, nextDisplayName: string, nextAvatar = '') {
+function applyUserSession(
+  nextToken: string,
+  nextRole: UserRole,
+  nextDisplayName: string,
+  nextAvatar = '',
+  nextUserId = '',
+  nextUsername = '',
+) {
   type UserStoreCompat = {
-    setSession?: (token: string, role: UserRole, displayName: string, avatar?: string) => void
+    setSession?: (
+      token: string,
+      role: UserRole,
+      displayName: string,
+      avatar?: string,
+      userId?: string,
+      username?: string,
+    ) => void
     login?: (role: UserRole, displayName?: string, avatar?: string) => void
     $patch?: (state: Record<string, unknown>) => void
     token?: string
     role?: UserRole
+    userId?: string
+    username?: string
     displayName?: string
     avatar?: string
   }
@@ -107,7 +123,7 @@ function applyUserSession(nextToken: string, nextRole: UserRole, nextDisplayName
   const store = userStore as unknown as UserStoreCompat
 
   if (typeof store.setSession === 'function') {
-    store.setSession(nextToken, nextRole, nextDisplayName, nextAvatar)
+    store.setSession(nextToken, nextRole, nextDisplayName, nextAvatar, nextUserId, nextUsername)
     return
   }
 
@@ -118,17 +134,31 @@ function applyUserSession(nextToken: string, nextRole: UserRole, nextDisplayName
   store.$patch?.({
     token: nextToken,
     role: nextRole,
+    userId: nextUserId,
+    username: nextUsername,
     displayName: nextDisplayName,
     avatar: nextAvatar,
   })
 
   store.token = nextToken
   store.role = nextRole
+  store.userId = nextUserId
+  store.username = nextUsername
   store.displayName = nextDisplayName
   store.avatar = nextAvatar
 
   localStorage.setItem('oj-token', nextToken)
   localStorage.setItem('oj-role', nextRole)
+  if (nextUserId) {
+    localStorage.setItem('oj-user-id', nextUserId)
+  } else {
+    localStorage.removeItem('oj-user-id')
+  }
+  if (nextUsername) {
+    localStorage.setItem('oj-username', nextUsername)
+  } else {
+    localStorage.removeItem('oj-username')
+  }
   localStorage.setItem('oj-display-name', nextDisplayName)
   if (nextAvatar) {
     localStorage.setItem('oj-avatar', nextAvatar)
@@ -209,7 +239,14 @@ async function handleLogin() {
       localStorage.setItem(LOGIN_PASSWORD_KEY, payload.password)
     }
 
-    applyUserSession(token, role, displayName, userInfo.avatar || '')
+    applyUserSession(
+      token,
+      role,
+      displayName,
+      userInfo.avatar || '',
+      userInfo.id || '',
+      userInfo.username || payload.username,
+    )
     ojMessage.success('登录成功')
     await router.push('/')
   } catch (error) {

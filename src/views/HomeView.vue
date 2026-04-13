@@ -1,82 +1,264 @@
 <script setup lang="ts">
+import axios from 'axios'
+import { computed, onMounted, ref } from 'vue'
+import { getHomeOverview, type HomeOverviewVO, type HomeRecentSubmissionVO } from '../api/home'
+import type { SubmissionStatus } from '../api/submission'
 import OjBadge from '../components/ui/OjBadge.vue'
 import OjCard from '../components/ui/OjCard.vue'
 
-const overviewCards = [
-  {
-    label: '题库题目',
-    value: '3,842',
-    trend: '↑ 24 本周新增',
-    trendClass: 'text-emerald-600 dark:text-emerald-400',
-    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-  },
-  {
-    label: '今日提交',
-    value: '18.6k',
-    trend: '↑ 5.2% 较昨日',
-    trendClass: 'text-emerald-600 dark:text-emerald-400',
-    icon: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4',
-  },
-  {
-    label: '评测队列',
-    value: '空闲',
-    trend: '0 等待中任务',
-    trendClass: 'text-slate-500 dark:text-slate-400',
-    icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z',
-  },
-  {
-    label: '全站首次 AC 率',
-    value: '41.6%',
-    trend: '↓ 0.3pt 较上周',
-    trendClass: 'text-rose-600 dark:text-rose-400',
-    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-  },
-]
+type BadgeTone = 'ac' | 'warning' | 'danger' | 'neutral' | 'judging' | 'wa' | 'ce' | 're' | 'tle'
 
-const weeklyBars = [
-  { day: '一', height: '45%' },
-  { day: '二', height: '62%' },
-  { day: '三', height: '38%' },
-  { day: '四', height: '78%' },
-  { day: '五', height: '55%' },
-  { day: '六', height: '92%' },
-  { day: '日', height: '68%' },
-]
+const loading = ref(false)
+const errorMessage = ref('')
+const overview = ref<HomeOverviewVO | null>(null)
 
-const announcements = [
-  { title: '春季积分赛 #3 进行中 · Rated', desc: '截止今晚 22:00 · ICPC 赛制' },
-  { title: '新题 P3842「树上的路径」已公开', desc: '难度：省选 / 图论 · 树链剖分' },
-  { title: 'Python 3.14.2 评测镜像已切换', desc: '1 小时前 · 系统公告' },
-  { title: '下周模拟赛：NOI 2025 真题复现', desc: '报名开放中 · 4 月 5 日 14:00' },
-]
+const recentContests = computed(() => (
+  Array.isArray(overview.value?.recentContests) ? overview.value?.recentContests ?? [] : []
+))
 
-const submissions = [
-  { id: '#928441', user: 'star_x', problem: 'P2103 区间 GCD', lang: 'C++17', result: 'AC', cost: '92ms / 15.2MB', time: '刚刚' },
-  { id: '#928440', user: 'mintea', problem: 'P3842 树上的路径', lang: 'Python 3.14.2', result: '评测中', cost: '—', time: '12s 前' },
-  { id: '#928438', user: 'visitor_07', problem: 'P1001 A+B Problem', lang: 'Java 17', result: 'WA', cost: '4ms / 48MB', time: '1 分钟前' },
-  { id: '#928435', user: 'algo_fan', problem: 'P3379 模板·最近公共祖先', lang: 'C++17', result: 'TLE', cost: '1000ms / 32MB', time: '3 分钟前' },
-  { id: '#928431', user: 'newbie_2026', problem: 'P1048 采药', lang: 'C17', result: 'RE', cost: '0ms / 0MB', time: '6 分钟前' },
-]
+const recentSubmissions = computed(() => (
+  Array.isArray(overview.value?.recentSubmissions) ? overview.value?.recentSubmissions ?? [] : []
+))
 
-function resultTone(result: string) {
-  if (result === 'AC') return 'ac'
-  if (result === '评测中') return 'judging'
-  if (result === 'WA') return 'wa'
-  if (result === 'TLE') return 'tle'
-  if (result === 'RE') return 're'
-  if (result === 'CE') return 'ce'
+const announcements = computed(() => recentContests.value.slice(0, 4).map((item) => ({
+  title: `${typeLabel(item.type)}「${item.title}」`,
+  desc: `${String(item.statusText || '未知')} · ${formatDateTime(item.startTime)} ~ ${formatDateTime(item.endTime)}`,
+})))
+
+const headline = computed(() => {
+  if (!recentContests.value.length) {
+    return '平台首页数据已接入真实接口'
+  }
+  const first = recentContests.value[0]
+  return `最近活动：${typeLabel(first.type)}「${first.title}」`
+})
+
+const overviewCards = computed(() => {
+  const problemCount = Number(overview.value?.problemCount || 0)
+  const todaySubmissionCount = Number(overview.value?.todaySubmissionCount || 0)
+  const queueTaskCount = Number(overview.value?.queueTaskCount || 0)
+  const globalAcRate = Number(overview.value?.globalAcRate || 0)
+
+  return [
+    {
+      label: '题库题目',
+      value: formatNumber(problemCount),
+      trend: '实时统计',
+      trendClass: 'text-slate-500 dark:text-slate-400',
+      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    },
+    {
+      label: '今日提交',
+      value: formatNumber(todaySubmissionCount),
+      trend: '按自然日累计',
+      trendClass: 'text-slate-500 dark:text-slate-400',
+      icon: 'M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4',
+    },
+    {
+      label: '评测队列',
+      value: queueTaskCount > 0 ? String(queueTaskCount) : '空闲',
+      trend: `${queueTaskCount} 等待中任务`,
+      trendClass: queueTaskCount > 0
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-emerald-600 dark:text-emerald-400',
+      icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z',
+    },
+    {
+      label: '全站 AC 率',
+      value: `${globalAcRate.toFixed(1)}%`,
+      trend: '基于历史提交计算',
+      trendClass: 'text-slate-500 dark:text-slate-400',
+      icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    },
+  ]
+})
+
+function resolveErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    const backendMessage = (error.response?.data as { message?: string } | undefined)?.message
+    return backendMessage || error.message || '首页数据加载失败'
+  }
+  return error instanceof Error ? error.message : '首页数据加载失败'
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('zh-CN').format(Math.max(0, Number(value || 0)))
+}
+
+function formatDateTime(raw: string | undefined) {
+  if (!raw) {
+    return '-'
+  }
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) {
+    return raw
+  }
+  const y = parsed.getFullYear()
+  const m = `${parsed.getMonth() + 1}`.padStart(2, '0')
+  const d = `${parsed.getDate()}`.padStart(2, '0')
+  const h = `${parsed.getHours()}`.padStart(2, '0')
+  const min = `${parsed.getMinutes()}`.padStart(2, '0')
+  return `${y}-${m}-${d} ${h}:${min}`
+}
+
+function formatRelativeTime(raw: string | undefined) {
+  if (!raw) {
+    return '-'
+  }
+  const time = new Date(raw).getTime()
+  if (Number.isNaN(time)) {
+    return raw
+  }
+  const diff = Date.now() - time
+  if (diff < 0) {
+    return '刚刚'
+  }
+  if (diff < 10_000) {
+    return '刚刚'
+  }
+  if (diff < 60_000) {
+    return `${Math.floor(diff / 1000)} 秒前`
+  }
+  if (diff < 3_600_000) {
+    return `${Math.floor(diff / 60_000)} 分钟前`
+  }
+  if (diff < 86_400_000) {
+    return `${Math.floor(diff / 3_600_000)} 小时前`
+  }
+  return `${Math.floor(diff / 86_400_000)} 天前`
+}
+
+function typeLabel(type: string | undefined) {
+  return String(type || '').toUpperCase() === 'HOMEWORK' ? '作业' : '比赛'
+}
+
+function contestStatusTone(statusText: string | undefined): BadgeTone {
+  const text = String(statusText || '')
+  if (text === '进行中') {
+    return 'ac'
+  }
+  if (text === '未开始') {
+    return 'warning'
+  }
+  if (text === '已关闭') {
+    return 'danger'
+  }
   return 'neutral'
 }
+
+function resultLabel(status: SubmissionStatus | undefined) {
+  switch (String(status || '').toUpperCase()) {
+    case 'WAITING':
+      return '排队中'
+    case 'JUDGING':
+      return '评测中'
+    case 'ACCEPTED':
+      return 'AC'
+    case 'PARTIAL_ACCEPTED':
+      return '部分通过'
+    case 'WRONG_ANSWER':
+      return 'WA'
+    case 'COMPILE_ERROR':
+      return 'CE'
+    case 'RUNTIME_ERROR':
+      return 'RE'
+    case 'TIME_LIMIT_EXCEEDED':
+      return 'TLE'
+    case 'SYSTEM_ERROR':
+      return '系统错误'
+    default:
+      return status || '未知'
+  }
+}
+
+function resultTone(status: SubmissionStatus | undefined): BadgeTone {
+  switch (String(status || '').toUpperCase()) {
+    case 'WAITING':
+    case 'JUDGING':
+      return 'judging'
+    case 'ACCEPTED':
+      return 'ac'
+    case 'PARTIAL_ACCEPTED':
+      return 'warning'
+    case 'WRONG_ANSWER':
+      return 'wa'
+    case 'COMPILE_ERROR':
+      return 'ce'
+    case 'RUNTIME_ERROR':
+      return 're'
+    case 'TIME_LIMIT_EXCEEDED':
+      return 'tle'
+    case 'SYSTEM_ERROR':
+      return 'danger'
+    default:
+      return 'neutral'
+  }
+}
+
+function displayUser(item: HomeRecentSubmissionVO) {
+  const name = String(item.userRealName || '').trim()
+  if (name) {
+    return name
+  }
+  const username = String(item.username || '').trim()
+  return username || '-'
+}
+
+function displayProblem(item: HomeRecentSubmissionVO) {
+  const title = String(item.problemTitle || '').trim()
+  if (title) {
+    return title
+  }
+  const problemId = String(item.problemId || '').trim()
+  if (problemId) {
+    return `题目 #${problemId}`
+  }
+  return '-'
+}
+
+function submissionCost(item: HomeRecentSubmissionVO) {
+  if ((item.timeUsed === null || item.timeUsed === undefined) && (item.memoryUsed === null || item.memoryUsed === undefined)) {
+    return '—'
+  }
+  const time = item.timeUsed === null || item.timeUsed === undefined ? '-' : `${Number(item.timeUsed)}ms`
+  const memory = item.memoryUsed === null || item.memoryUsed === undefined ? '-' : `${Number(item.memoryUsed)}MB`
+  return `${time} / ${memory}`
+}
+
+async function loadOverview() {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    const response = await getHomeOverview()
+    if (response.code !== 0 || !response.data) {
+      throw new Error(response.message || '首页数据加载失败')
+    }
+    overview.value = response.data
+  } catch (error) {
+    overview.value = null
+    errorMessage.value = resolveErrorMessage(error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  void loadOverview()
+})
 </script>
 
 <template>
   <section class="oj-page">
     <div>
       <h1 class="oj-page-title">开始刷题，保持手感</h1>
-      <p class="oj-page-subtitle">
-        本周有 <strong class="font-medium text-slate-900 dark:text-slate-100">春季积分赛 #3</strong>
-        正在进行；全站数据更新至 2026 年 3 月 30 日。
-      </p>
+      <p class="oj-page-subtitle">{{ headline }}</p>
+    </div>
+
+    <div
+      v-if="errorMessage"
+      class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"
+    >
+      {{ errorMessage }}
     </div>
 
     <section class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4" aria-label="平台概览">
@@ -100,18 +282,29 @@ function resultTone(result: string) {
     <section class="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
       <OjCard tone="neutral" class="rounded-xl">
         <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-4 dark:border-white/[0.06]">
-          <h2 class="text-[0.9375rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100">近 7 日提交量</h2>
-          <a href="#" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">下载统计</a>
+          <h2 class="text-[0.9375rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100">最近比赛</h2>
+          <RouterLink to="/contests" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">比赛列表</RouterLink>
         </div>
-        <div
-          class="flex h-[200px] items-end justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 pb-1 pt-3 dark:border-white/[0.06] dark:bg-[#181c2a]"
-          style="background-image: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(148,163,184,0.12) 39px, rgba(148,163,184,0.12) 40px)"
-          role="img"
-          aria-label="柱状图：周一至周日提交次数"
-        >
-          <div v-for="bar in weeklyBars" :key="bar.day" class="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <div class="w-full max-w-[44px] rounded-t-md bg-violet-500/40" :style="{ height: bar.height }"></div>
-            <span class="font-mono text-[0.7rem] text-slate-500">{{ bar.day }}</span>
+        <div v-if="!recentContests.length" class="py-3 text-sm text-slate-500 dark:text-slate-400">
+          暂无比赛数据
+        </div>
+        <div v-else class="flex flex-col">
+          <div
+            v-for="(item, index) in recentContests"
+            :key="item.id"
+            class="flex items-start justify-between gap-3 py-3.5"
+            :class="index === recentContests.length - 1 ? '' : 'border-b border-slate-200 dark:border-white/[0.06]'"
+          >
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ item.title }}</p>
+              <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                {{ formatDateTime(item.startTime) }} ~ {{ formatDateTime(item.endTime) }}
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <OjBadge size="small" tone="neutral">{{ typeLabel(item.type) }}</OjBadge>
+              <OjBadge size="small" :tone="contestStatusTone(item.statusText)">{{ item.statusText || '未知' }}</OjBadge>
+            </div>
           </div>
         </div>
       </OjCard>
@@ -119,9 +312,12 @@ function resultTone(result: string) {
       <OjCard tone="neutral" class="rounded-xl">
         <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-4 dark:border-white/[0.06]">
           <h2 class="text-[0.9375rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100">公告与赛程</h2>
-          <a href="#" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">日历</a>
+          <RouterLink to="/contests" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">查看全部</RouterLink>
         </div>
-        <div class="flex flex-col">
+        <div v-if="!announcements.length" class="py-3 text-sm text-slate-500 dark:text-slate-400">
+          暂无公告
+        </div>
+        <div v-else class="flex flex-col">
           <div
             v-for="(item, index) in announcements"
             :key="item.title"
@@ -129,8 +325,8 @@ function resultTone(result: string) {
             :class="index === announcements.length - 1 ? '' : 'border-b border-slate-200 dark:border-white/[0.06]'"
           >
             <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400 dark:bg-slate-500" aria-hidden="true"></span>
-            <div>
-              <p class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ item.title }}</p>
+            <div class="min-w-0">
+              <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ item.title }}</p>
               <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ item.desc }}</p>
             </div>
           </div>
@@ -141,7 +337,7 @@ function resultTone(result: string) {
     <OjCard tone="neutral" class="rounded-xl" aria-labelledby="recent-submissions-title">
       <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-4 dark:border-white/[0.06]">
         <h2 id="recent-submissions-title" class="text-[0.9375rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100">最近提交</h2>
-        <a href="#" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">全局提交记录</a>
+        <RouterLink to="/submissions" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">全局提交记录</RouterLink>
       </div>
       <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-white/[0.06]">
         <table class="w-full min-w-[860px] border-collapse text-sm">
@@ -158,19 +354,22 @@ function resultTone(result: string) {
           </thead>
           <tbody class="text-slate-800 dark:text-slate-200">
             <tr
-              v-for="item in submissions"
+              v-for="item in recentSubmissions"
               :key="item.id"
               class="border-t border-slate-200 transition hover:bg-slate-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
             >
-              <td class="px-4 py-3 font-mono text-[0.82rem]">{{ item.id }}</td>
-              <td class="px-4 py-3">{{ item.user }}</td>
-              <td class="px-4 py-3">{{ item.problem }}</td>
-              <td class="px-4 py-3 font-mono text-[0.8rem]">{{ item.lang }}</td>
+              <td class="px-4 py-3 font-mono text-[0.82rem]">#{{ item.id }}</td>
+              <td class="px-4 py-3">{{ displayUser(item) }}</td>
+              <td class="px-4 py-3">{{ displayProblem(item) }}</td>
+              <td class="px-4 py-3 font-mono text-[0.8rem]">{{ item.language || '-' }}</td>
               <td class="px-4 py-3">
-                <OjBadge size="small" :tone="resultTone(item.result)">{{ item.result }}</OjBadge>
+                <OjBadge size="small" :tone="resultTone(item.status)">{{ resultLabel(item.status) }}</OjBadge>
               </td>
-              <td class="px-4 py-3 font-mono text-[0.8rem] text-slate-500">{{ item.cost }}</td>
-              <td class="px-4 py-3 text-slate-500">{{ item.time }}</td>
+              <td class="px-4 py-3 font-mono text-[0.8rem] text-slate-500">{{ submissionCost(item) }}</td>
+              <td class="px-4 py-3 text-slate-500">{{ formatRelativeTime(item.submitTime) }}</td>
+            </tr>
+            <tr v-if="!recentSubmissions.length && !loading">
+              <td colspan="7" class="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">暂无提交记录</td>
             </tr>
           </tbody>
         </table>

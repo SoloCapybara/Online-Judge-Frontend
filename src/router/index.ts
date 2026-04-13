@@ -44,6 +44,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '比赛' },
       },
       {
+        path: 'contests/:id',
+        name: 'contest-detail',
+        component: () => import('../views/ContestDetailView.vue'),
+        meta: { title: '比赛详情' },
+      },
+      {
         path: 'status',
         name: 'status',
         component: () => import('../views/StatusView.vue'),
