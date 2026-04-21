@@ -23,6 +23,15 @@ export interface UserProfileUpdateRequest {
   gender?: number
 }
 
+export interface UserProfileStatsVO {
+  solvedCount: number
+  submitCount: number
+  acceptedCount: number
+  acRate: number
+  currentStreakDays: number
+  longestStreakDays: number
+}
+
 export interface UserPasswordUpdateRequest {
   oldPassword: string
   newPassword: string
@@ -39,6 +48,11 @@ export async function updateCurrentUserProfile(
 ): Promise<BaseResponse<UserProfileVO>> {
   const response = await request.put('/user/profile', payload)
   return response as unknown as BaseResponse<UserProfileVO>
+}
+
+export async function getCurrentUserProfileStats(): Promise<BaseResponse<UserProfileStatsVO>> {
+  const response = await request.get('/user/profile/stats')
+  return response as unknown as BaseResponse<UserProfileStatsVO>
 }
 
 export async function uploadUserAvatar(file: File): Promise<BaseResponse<UserProfileVO>> {

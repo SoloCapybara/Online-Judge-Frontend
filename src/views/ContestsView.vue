@@ -898,7 +898,12 @@ onMounted(() => {
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="470" align="center" fixed="right">
+        <el-table-column
+          label="操作"
+          :min-width="canManageContests ? 540 : 240"
+          align="center"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div class="contest-action-group">
               <OjButton
@@ -1166,7 +1171,10 @@ onMounted(() => {
 .contest-action-group {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .contest-modal-grid {

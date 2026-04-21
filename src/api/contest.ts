@@ -73,6 +73,27 @@ export interface ContestRankPageQueryRequest {
   pageSize?: number
 }
 
+export interface ContestScorePageQueryRequest {
+  current?: number
+  pageSize?: number
+  usernameKeyword?: string
+  classKeyword?: string
+}
+
+export interface ContestScoreVO {
+  rank: number
+  userId: string
+  username?: string
+  realName?: string
+  studentNo?: string
+  acCount?: number
+  totalScore?: number
+  penaltyMinutes?: number
+  submitCount?: number
+}
+
+export type ContestScoreExportFormat = 'csv' | 'xlsx'
+
 export interface ContestRegisterRequest {
   accessPassword?: string
 }
@@ -157,4 +178,27 @@ export async function getContestRankPage(
 ): Promise<BaseResponse<PageResult<ContestRankVO>>> {
   const response = await request.get(`/contest/${contestId}/rank`, { params: query })
   return response as unknown as BaseResponse<PageResult<ContestRankVO>>
+}
+
+export async function getContestScorePage(
+  contestId: string | number,
+  query: ContestScorePageQueryRequest,
+): Promise<BaseResponse<PageResult<ContestScoreVO>>> {
+  const response = await request.get(`/contest/${contestId}/score/page`, { params: query })
+  return response as unknown as BaseResponse<PageResult<ContestScoreVO>>
+}
+
+export async function exportContestScoreFile(
+  contestId: string | number,
+  format: ContestScoreExportFormat,
+  query: Omit<ContestScorePageQueryRequest, 'current' | 'pageSize'>,
+): Promise<Blob> {
+  const response = await request.get(`/contest/${contestId}/score/export`, {
+    params: {
+      ...query,
+      format,
+    },
+    responseType: 'blob',
+  })
+  return response as unknown as Blob
 }

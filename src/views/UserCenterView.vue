@@ -7,12 +7,14 @@ import OjModal from '../components/ui/OjModal.vue'
 import OjSelect from '../components/ui/OjSelect.vue'
 import {
   getCurrentUserProfile,
+  getCurrentUserProfileStats,
   updateCurrentUserPassword,
   updateCurrentUserProfile,
   uploadUserAvatar,
   type UserPasswordUpdateRequest,
   type UserProfileUpdateRequest,
   type UserProfileVO,
+  type UserProfileStatsVO,
 } from '../api/user'
 import { useUserStore } from '../stores/user'
 import { ojMessage } from '../utils/message'
@@ -38,6 +40,14 @@ const avatarUploading = ref(false)
 const initialized = ref(false)
 const avatarLoadFailed = ref(false)
 const profile = ref<UserProfileVO | null>(null)
+const profileStats = ref<UserProfileStatsVO>({
+  solvedCount: 0,
+  submitCount: 0,
+  acceptedCount: 0,
+  acRate: 0,
+  currentStreakDays: 0,
+  longestStreakDays: 0,
+})
 
 const avatarModalOpen = ref(false)
 const avatarPreviewModalOpen = ref(false)
@@ -62,10 +72,11 @@ const passwordForm = reactive({
   checkPassword: '',
 })
 
-const solvedCount = computed(() => 412)
-const submitCount = computed(() => 3204)
-const streakDays = computed(() => 12)
-const longestStreak = computed(() => 28)
+const solvedCount = computed(() => Number(profileStats.value?.solvedCount || 0))
+const submitCount = computed(() => Number(profileStats.value?.submitCount || 0))
+const streakDays = computed(() => Number(profileStats.value?.currentStreakDays || 0))
+const longestStreak = computed(() => Number(profileStats.value?.longestStreakDays || 0))
+const acRate = computed(() => Number(profileStats.value?.acRate || 0))
 const genderOptions = [
   { label: '未知', value: '0' },
   { label: '男', value: '1' },
@@ -168,6 +179,7 @@ async function loadProfile(showError = true) {
       throw new Error(response.message || '获取个人信息失败')
     }
     applyProfile(response.data)
+    await loadProfileStats(showError)
   } catch (error) {
     if (showError) {
       ojMessage.error(resolveErrorMessage(error))
@@ -175,6 +187,28 @@ async function loadProfile(showError = true) {
   } finally {
     initialized.value = true
     loading.value = false
+  }
+}
+
+async function loadProfileStats(showError = true) {
+  try {
+    const response = await getCurrentUserProfileStats()
+    if (response.code !== 0 || !response.data) {
+      throw new Error(response.message || '获取统计信息失败')
+    }
+    profileStats.value = response.data
+  } catch (error) {
+    profileStats.value = {
+      solvedCount: 0,
+      submitCount: 0,
+      acceptedCount: 0,
+      acRate: 0,
+      currentStreakDays: 0,
+      longestStreakDays: 0,
+    }
+    if (showError) {
+      ojMessage.error(resolveErrorMessage(error))
+    }
   }
 }
 
@@ -466,7 +500,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">已通过题目</div>
           <div class="mt-1 text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{{ solvedCount }}</div>
-          <p class="mt-2 text-xs text-slate-500 dark:text-slate-500">评测通过的去重题数</p>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-500">评测通过的去重题数 · AC率 {{ acRate.toFixed(2) }}%</p>
         </article>
 
         <article class="group flex flex-col rounded-xl border border-slate-200 bg-white p-5 shadow-card transition hover:border-violet-300/40 hover:shadow-lg dark:border-white/[0.08] dark:bg-[#12151f] dark:shadow-card-dark dark:hover:border-violet-500/25">
