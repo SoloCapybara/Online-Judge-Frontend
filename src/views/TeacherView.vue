@@ -286,7 +286,7 @@ onMounted(() => {
 
           <OjInput
             v-model="filterForm.classKeyword"
-            placeholder="班级关键词（按学号匹配）"
+            placeholder="按学号搜索"
             clearable
           />
 

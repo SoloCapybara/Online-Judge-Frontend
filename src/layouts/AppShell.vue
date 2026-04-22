@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  ChatDotRound,
   DataLine,
   Files,
   House,
@@ -70,7 +69,6 @@ const menuItems: MenuItem[] = [
   { key: '/submissions', label: '提交记录', icon: Tickets, roles: ['student', 'teacher', 'admin'], section: '练习' },
   { key: '/status', label: '评测状态', icon: DataLine, roles: ['student', 'teacher', 'admin'], section: '练习' },
   { key: '/rank', label: '排行榜', icon: Medal, roles: ['student', 'teacher', 'admin'], section: '练习' },
-  { key: '/discuss', label: '讨论区', icon: ChatDotRound, roles: ['student', 'teacher', 'admin'], section: '社区' },
   { key: '/help', label: '帮助 / FAQ', icon: QuestionFilled, roles: ['student', 'teacher', 'admin'], section: '社区' },
   { key: '/teacher', label: '教师工作台', icon: Tickets, roles: ['teacher'], section: '工作台' },
   { key: '/admin', label: '管理台', icon: Monitor, roles: ['admin'], section: '工作台' },

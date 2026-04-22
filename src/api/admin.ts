@@ -49,6 +49,32 @@ export interface AdminUserRolesUpdateRequest {
   roleCodes: string[]
 }
 
+export interface AdminSystemConfigVO {
+  id: string
+  configKey: string
+  configName: string
+  configValue: string
+  valueType: string
+  category: string
+  description?: string
+  status: number
+  updateTime?: string
+}
+
+export interface AdminSystemConfigPageQueryRequest {
+  current?: number
+  pageSize?: number
+  keyword?: string
+  category?: string
+  status?: number
+}
+
+export interface AdminSystemConfigUpdateRequest {
+  configValue?: string
+  description?: string
+  status?: number
+}
+
 export interface PageResult<T> {
   current: number
   total: number
@@ -90,5 +116,25 @@ export async function updateAdminUserRoles(
   payload: AdminUserRolesUpdateRequest,
 ): Promise<BaseResponse<boolean>> {
   const response = await request.put(`/admin/users/${userId}/roles`, payload)
+  return response as unknown as BaseResponse<boolean>
+}
+
+export async function getAdminSystemConfigPage(
+  query: AdminSystemConfigPageQueryRequest,
+): Promise<BaseResponse<PageResult<AdminSystemConfigVO>>> {
+  const response = await request.get('/admin/config/page', { params: query })
+  return response as unknown as BaseResponse<PageResult<AdminSystemConfigVO>>
+}
+
+export async function getAdminSystemConfigCategories(): Promise<BaseResponse<string[]>> {
+  const response = await request.get('/admin/config/categories')
+  return response as unknown as BaseResponse<string[]>
+}
+
+export async function updateAdminSystemConfig(
+  configId: string | number,
+  payload: AdminSystemConfigUpdateRequest,
+): Promise<BaseResponse<boolean>> {
+  const response = await request.put(`/admin/config/${configId}`, payload)
   return response as unknown as BaseResponse<boolean>
 }

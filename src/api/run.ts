@@ -8,6 +8,7 @@ export interface RunCodeRequest {
   sourceCode: string
   inputData?: string
   timeLimitMs?: number
+  memoryLimitMb?: number
 }
 
 export interface RunCodeResponse {
