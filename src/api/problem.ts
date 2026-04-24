@@ -6,6 +6,8 @@ export interface ProblemVO {
   title: string
   categoryId: string
   categoryName?: string
+  tagList?: ProblemTagVO[]
+  tagNames?: string[]
   content: string
   inputDesc: string
   outputDesc: string
@@ -39,6 +41,7 @@ export interface ProblemCaseVO {
 export interface ProblemUpdateRequest {
   title: string
   categoryId?: string
+  tagNames?: string[]
   content: string
   inputDesc?: string
   outputDesc?: string
@@ -64,6 +67,7 @@ export interface ProblemPageQueryRequest {
   pageSize?: number
   title?: string
   categoryId?: string
+  tagId?: string
   difficulty?: number
   status?: number
 }
@@ -77,6 +81,11 @@ export interface ProblemCategoryVO {
   status?: number
   createTime?: string
   updateTime?: string
+}
+
+export interface ProblemTagVO {
+  id: string
+  tagName: string
 }
 
 export interface PageResult<T> {
@@ -107,11 +116,17 @@ export async function getProblemPage(
   appendQueryParam(params, 'pageSize', query.pageSize)
   appendQueryParam(params, 'title', query.title)
   appendQueryParam(params, 'categoryId', query.categoryId)
+  appendQueryParam(params, 'tagId', query.tagId)
   appendQueryParam(params, 'difficulty', query.difficulty)
   appendQueryParam(params, 'status', query.status)
 
   const response = await request.get('/problem/page', { params })
   return response as unknown as BaseResponse<PageResult<ProblemVO>>
+}
+
+export async function getProblemTagList(): Promise<BaseResponse<ProblemTagVO[]>> {
+  const response = await request.get('/problem/tags')
+  return response as unknown as BaseResponse<ProblemTagVO[]>
 }
 
 export async function getProblemCategoryList(

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import axios from 'axios'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import * as echarts from 'echarts'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import {
   getAdminSystemConfigCategories,
   getAdminSystemConfigPage,
@@ -15,6 +15,17 @@ import {
   type AdminSystemConfigVO,
   type AdminUserVO,
 } from '../api/admin'
+import { getHomeOverview, type HomeRecentContestVO } from '../api/home'
+import {
+  getJudgeDailyStats,
+  getJudgeOverview,
+  getJudgeSystemMetrics,
+  getSubmissionPage,
+  type JudgeDailyStatsVO,
+  type JudgeSystemMetricsVO,
+  type SubmissionStatus,
+  type SubmissionVO,
+} from '../api/submission'
 import OjBadge from '../components/ui/OjBadge.vue'
 import OjButton from '../components/ui/OjButton.vue'
 import OjCard from '../components/ui/OjCard.vue'
@@ -28,7 +39,6 @@ import { ojMessage } from '../utils/message'
 
 type AdminTabKey = 'users' | 'configs' | 'monitor'
 
-const router = useRouter()
 const activeTab = ref<AdminTabKey>('users')
 
 const adminTabs: Array<{ key: AdminTabKey; label: string; description: string }> = [
@@ -154,6 +164,49 @@ const configOverviewCards = computed(() => [
   { key: 'config-category', label: '配置分类', value: configCategories.value.length },
 ])
 const currentUserId = ref(localStorage.getItem('oj-user-id') ?? '')
+const monitorLoading = ref(false)
+const monitorErrorMessage = ref('')
+const monitorInitialized = ref(false)
+const monitorAutoRefresh = ref(true)
+const monitorLastUpdated = ref('')
+const monitorRecentSubmissions = ref<SubmissionVO[]>([])
+const monitorRecentContests = ref<HomeRecentContestVO[]>([])
+const monitorTrendSamples = ref<SubmissionVO[]>([])
+const monitorDailyStats = ref<JudgeDailyStatsVO[]>([])
+const monitorTrendChartRef = ref<HTMLElement | null>(null)
+const monitorDistributionChartRef = ref<HTMLElement | null>(null)
+const monitorRadarChartRef = ref<HTMLElement | null>(null)
+const monitorOverview = reactive({
+  queueTaskCount: 0,
+  onlineNodeCount: 0,
+  todaySubmissionCount: 0,
+  serviceStatus: 'DOWN',
+  problemCount: 0,
+  globalAcRate: 0,
+})
+const MONITOR_REFRESH_INTERVAL_MS = 5000
+const monitorSystemMetrics = reactive<JudgeSystemMetricsVO>({
+  osName: '-',
+  osArch: '-',
+  systemCpuUsage: 0,
+  processCpuUsage: 0,
+  systemLoadAverage: 0,
+  systemMemoryTotal: 0,
+  systemMemoryFree: 0,
+  jvmHeapTotal: 0,
+  jvmHeapUsed: 0,
+  diskTotal: 0,
+  diskUsable: 0,
+  processUptimeMs: 0,
+  containerized: false,
+  runtimeEnvironment: 'HOST',
+  containerHint: '',
+  collectedAt: '',
+})
+let monitorRefreshTimer: ReturnType<typeof setInterval> | null = null
+let monitorTrendChart: echarts.ECharts | null = null
+let monitorDistributionChart: echarts.ECharts | null = null
+let monitorRadarChart: echarts.ECharts | null = null
 
 function resolveErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
@@ -168,6 +221,44 @@ function formatDateTime(value: string | undefined) {
     return '-'
   }
   return value.replace('T', ' ')
+}
+
+function formatBytes(value: number | undefined) {
+  const bytes = Number(value || 0)
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 B'
+  }
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let size = bytes
+  let unitIndex = 0
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024
+    unitIndex++
+  }
+  return `${size.toFixed(size >= 100 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+}
+
+function formatDuration(ms: number | undefined) {
+  const total = Math.max(0, Number(ms || 0))
+  const seconds = Math.floor(total / 1000)
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainSeconds = seconds % 60
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${remainSeconds}s`
+  }
+  return `${remainSeconds}s`
+}
+
+function safePercent(value: number | undefined) {
+  const next = Number(value || 0)
+  if (!Number.isFinite(next)) {
+    return 0
+  }
+  return Math.max(0, Math.min(100, next))
 }
 
 function roleLabel(row: AdminUserVO) {
@@ -203,6 +294,479 @@ function statusLabel(value: number | string | undefined) {
 
 function statusTone(value: number | string | undefined) {
   return Number(value) === 1 ? 'ac' : 'danger'
+}
+
+function judgeServiceStatusLabel(status: string | undefined) {
+  switch (String(status || '').toUpperCase()) {
+    case 'NORMAL':
+      return '正常'
+    case 'BUSY':
+      return '繁忙'
+    case 'DOWN':
+      return '异常'
+    default:
+      return status || '未知'
+  }
+}
+
+function judgeServiceStatusTone(status: string | undefined) {
+  switch (String(status || '').toUpperCase()) {
+    case 'NORMAL':
+      return 'ac'
+    case 'BUSY':
+      return 'warning'
+    case 'DOWN':
+      return 'danger'
+    default:
+      return 'neutral'
+  }
+}
+
+function submissionStatusLabel(status: SubmissionStatus | undefined) {
+  switch (String(status || '').toUpperCase()) {
+    case 'WAITING':
+      return '排队中'
+    case 'JUDGING':
+      return '判题中'
+    case 'ACCEPTED':
+      return '通过'
+    case 'PARTIAL_ACCEPTED':
+      return '部分通过'
+    case 'WRONG_ANSWER':
+      return '答案错误'
+    case 'COMPILE_ERROR':
+      return '编译错误'
+    case 'RUNTIME_ERROR':
+      return '运行错误'
+    case 'TIME_LIMIT_EXCEEDED':
+      return '超时'
+    case 'SYSTEM_ERROR':
+      return '系统错误'
+    default:
+      return status || '未知'
+  }
+}
+
+function submissionStatusTone(status: SubmissionStatus | undefined) {
+  switch (String(status || '').toUpperCase()) {
+    case 'WAITING':
+    case 'JUDGING':
+      return 'judging'
+    case 'ACCEPTED':
+      return 'ac'
+    case 'PARTIAL_ACCEPTED':
+      return 'warning'
+    case 'WRONG_ANSWER':
+      return 'wa'
+    case 'COMPILE_ERROR':
+      return 'ce'
+    case 'RUNTIME_ERROR':
+      return 're'
+    case 'TIME_LIMIT_EXCEEDED':
+      return 'tle'
+    case 'SYSTEM_ERROR':
+      return 'danger'
+    default:
+      return 'neutral'
+  }
+}
+
+function monitorUserLabel(row: SubmissionVO) {
+  const realName = String(row.userRealName || '').trim()
+  if (realName) {
+    return realName
+  }
+  const username = String(row.username || '').trim()
+  if (username) {
+    return username
+  }
+  return row.userId ? `用户#${row.userId}` : '-'
+}
+
+function monitorProblemLabel(row: SubmissionVO) {
+  const title = String(row.problemTitle || '').trim()
+  if (title) {
+    return title
+  }
+  return row.problemId ? `题目#${row.problemId}` : '-'
+}
+
+function monitorContestStatusTone(statusText: string | undefined) {
+  const text = String(statusText || '')
+  if (text.includes('进行中')) {
+    return 'ac'
+  }
+  if (text.includes('未开始')) {
+    return 'warning'
+  }
+  if (text.includes('已结束') || text.includes('已关闭')) {
+    return 'neutral'
+  }
+  return 'neutral'
+}
+
+function monitorTypeLabel(type: string | undefined) {
+  return String(type || '').toUpperCase() === 'HOMEWORK' ? '作业' : '比赛'
+}
+
+async function loadMonitorDashboard() {
+  monitorLoading.value = true
+  monitorErrorMessage.value = ''
+  try {
+    const [judgeRes, systemRes, homeRes, submissionRes, dailyRes, trendRes] = await Promise.all([
+      getJudgeOverview(),
+      getJudgeSystemMetrics(),
+      getHomeOverview(),
+      getSubmissionPage({ current: 1, pageSize: 8 }),
+      getJudgeDailyStats(7),
+      getSubmissionPage({ current: 1, pageSize: 100 }),
+    ])
+    if (judgeRes.code !== 0 || !judgeRes.data) {
+      throw new Error(judgeRes.message || '加载判题概览失败')
+    }
+    if (homeRes.code !== 0 || !homeRes.data) {
+      throw new Error(homeRes.message || '加载首页概览失败')
+    }
+    if (systemRes.code !== 0 || !systemRes.data) {
+      throw new Error(systemRes.message || '加载系统资源失败')
+    }
+    if (submissionRes.code !== 0 || !submissionRes.data) {
+      throw new Error(submissionRes.message || '加载最近提交失败')
+    }
+    if (dailyRes.code !== 0 || !dailyRes.data) {
+      throw new Error(dailyRes.message || '加载每日趋势失败')
+    }
+    if (trendRes.code !== 0 || !trendRes.data) {
+      throw new Error(trendRes.message || '加载趋势样本失败')
+    }
+
+    monitorOverview.queueTaskCount = Number(judgeRes.data.queueTaskCount || 0)
+    monitorOverview.onlineNodeCount = Number(judgeRes.data.onlineNodeCount || 0)
+    monitorOverview.todaySubmissionCount = Number(judgeRes.data.todaySubmissionCount || 0)
+    monitorOverview.serviceStatus = String(judgeRes.data.serviceStatus || 'DOWN')
+    monitorOverview.problemCount = Number(homeRes.data.problemCount || 0)
+    monitorOverview.globalAcRate = Number(homeRes.data.globalAcRate || 0)
+    monitorSystemMetrics.osName = systemRes.data.osName || '-'
+    monitorSystemMetrics.osArch = systemRes.data.osArch || '-'
+    monitorSystemMetrics.systemCpuUsage = Number(systemRes.data.systemCpuUsage || 0)
+    monitorSystemMetrics.processCpuUsage = Number(systemRes.data.processCpuUsage || 0)
+    monitorSystemMetrics.systemLoadAverage = Number(systemRes.data.systemLoadAverage || 0)
+    monitorSystemMetrics.systemMemoryTotal = Number(systemRes.data.systemMemoryTotal || 0)
+    monitorSystemMetrics.systemMemoryFree = Number(systemRes.data.systemMemoryFree || 0)
+    monitorSystemMetrics.jvmHeapTotal = Number(systemRes.data.jvmHeapTotal || 0)
+    monitorSystemMetrics.jvmHeapUsed = Number(systemRes.data.jvmHeapUsed || 0)
+    monitorSystemMetrics.diskTotal = Number(systemRes.data.diskTotal || 0)
+    monitorSystemMetrics.diskUsable = Number(systemRes.data.diskUsable || 0)
+    monitorSystemMetrics.processUptimeMs = Number(systemRes.data.processUptimeMs || 0)
+    monitorSystemMetrics.containerized = Boolean(systemRes.data.containerized)
+    monitorSystemMetrics.runtimeEnvironment = String(systemRes.data.runtimeEnvironment || 'HOST')
+    monitorSystemMetrics.containerHint = systemRes.data.containerHint || ''
+    monitorSystemMetrics.collectedAt = systemRes.data.collectedAt || ''
+
+    monitorRecentContests.value = Array.isArray(homeRes.data.recentContests) ? homeRes.data.recentContests.slice(0, 6) : []
+    monitorRecentSubmissions.value = Array.isArray(submissionRes.data.records) ? submissionRes.data.records : []
+    monitorDailyStats.value = Array.isArray(dailyRes.data) ? dailyRes.data : []
+    monitorTrendSamples.value = Array.isArray(trendRes.data.records) ? trendRes.data.records : []
+    monitorLastUpdated.value = new Date().toLocaleString('zh-CN', { hour12: false })
+    monitorInitialized.value = true
+    await nextTick()
+    updateMonitorCharts()
+  } catch (error) {
+    monitorErrorMessage.value = resolveErrorMessage(error)
+    monitorRecentContests.value = []
+    monitorRecentSubmissions.value = []
+    monitorDailyStats.value = []
+    monitorTrendSamples.value = []
+    monitorSystemMetrics.osName = '-'
+    monitorSystemMetrics.osArch = '-'
+    monitorSystemMetrics.systemCpuUsage = 0
+    monitorSystemMetrics.processCpuUsage = 0
+    monitorSystemMetrics.systemLoadAverage = 0
+    monitorSystemMetrics.systemMemoryTotal = 0
+    monitorSystemMetrics.systemMemoryFree = 0
+    monitorSystemMetrics.jvmHeapTotal = 0
+    monitorSystemMetrics.jvmHeapUsed = 0
+    monitorSystemMetrics.diskTotal = 0
+    monitorSystemMetrics.diskUsable = 0
+    monitorSystemMetrics.processUptimeMs = 0
+    monitorSystemMetrics.containerized = false
+    monitorSystemMetrics.runtimeEnvironment = 'HOST'
+    monitorSystemMetrics.containerHint = ''
+    monitorSystemMetrics.collectedAt = ''
+    await nextTick()
+    updateMonitorCharts()
+  } finally {
+    monitorLoading.value = false
+  }
+}
+
+function parseDate(value: string | undefined): Date | null {
+  if (!value) {
+    return null
+  }
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T')
+  const date = new Date(normalized)
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+  return date
+}
+
+function formatDayLabel(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${month}-${day}`
+}
+
+function buildRecent7DaySeries(records: JudgeDailyStatsVO[]) {
+  const labels = records.map((item) => {
+    const date = parseDate(item.statDate)
+    if (!date) {
+      return item.statDate || '-'
+    }
+    return formatDayLabel(date)
+  })
+  const counts = records.map((item) => Number(item.submitCount || 0))
+  const acRates = records.map((item) => Number(item.acRate || 0))
+  return { labels, counts, acRates }
+}
+
+function buildStatusDistribution(records: SubmissionVO[]) {
+  const grouped = new Map<string, number>()
+  records.forEach((item) => {
+    const key = String(item.status || 'UNKNOWN').toUpperCase()
+    grouped.set(key, (grouped.get(key) || 0) + 1)
+  })
+  const ordered = Array.from(grouped.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+  return ordered.map(([status, value]) => ({
+    name: submissionStatusLabel(status),
+    value,
+  }))
+}
+
+function clampPercent(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+  return Math.max(0, Math.min(100, value))
+}
+
+function buildRadarValues(records: SubmissionVO[]) {
+  const total = records.length
+  const accepted = records.filter((item) => String(item.status || '').toUpperCase() === 'ACCEPTED').length
+  const successRate = total <= 0 ? 0 : (accepted * 100) / total
+
+  const queuePressureScore = clampPercent(100 - monitorOverview.queueTaskCount * 4)
+  const nodeAvailabilityScore = clampPercent(monitorOverview.onlineNodeCount * 25)
+  const dailyActivityScore = clampPercent(monitorOverview.todaySubmissionCount * 2)
+  const acRateScore = clampPercent(monitorOverview.globalAcRate)
+  const stabilityScore = clampPercent(successRate)
+
+  return [
+    dailyActivityScore,
+    nodeAvailabilityScore,
+    queuePressureScore,
+    acRateScore,
+    stabilityScore,
+  ]
+}
+
+function createChartInstance(el: HTMLElement | null, current: echarts.ECharts | null) {
+  if (!el) {
+    return null
+  }
+  if (current) {
+    return current
+  }
+  return echarts.init(el)
+}
+
+function updateMonitorCharts() {
+  monitorTrendChart = createChartInstance(monitorTrendChartRef.value, monitorTrendChart)
+  monitorDistributionChart = createChartInstance(monitorDistributionChartRef.value, monitorDistributionChart)
+  monitorRadarChart = createChartInstance(monitorRadarChartRef.value, monitorRadarChart)
+
+  if (!monitorTrendChart || !monitorDistributionChart || !monitorRadarChart) {
+    return
+  }
+
+  const trend = buildRecent7DaySeries(monitorDailyStats.value)
+  const distribution = buildStatusDistribution(monitorTrendSamples.value)
+  const radarValues = buildRadarValues(monitorTrendSamples.value)
+
+  monitorTrendChart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: {
+      top: 0,
+      textStyle: { color: '#64748b' },
+    },
+    grid: { left: 36, right: 44, top: 36, bottom: 24 },
+    xAxis: {
+      type: 'category',
+      data: trend.labels,
+      boundaryGap: false,
+      axisLine: { lineStyle: { color: '#94a3b8' } },
+      axisLabel: { color: '#64748b' },
+    },
+    yAxis: [
+      {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { color: '#64748b' },
+        splitLine: { lineStyle: { color: 'rgba(148,163,184,0.25)' } },
+        name: '提交量',
+        nameTextStyle: { color: '#64748b' },
+      },
+      {
+        type: 'value',
+        min: 0,
+        max: 100,
+        axisLabel: { color: '#64748b', formatter: '{value}%' },
+        splitLine: { show: false },
+        name: 'AC率',
+        nameTextStyle: { color: '#64748b' },
+      },
+    ],
+    series: [
+      {
+        name: '提交量',
+        type: 'line',
+        smooth: true,
+        data: trend.counts,
+        showSymbol: true,
+        symbolSize: 6,
+        lineStyle: { width: 3, color: '#6366f1' },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(99,102,241,0.36)' },
+              { offset: 1, color: 'rgba(99,102,241,0.02)' },
+            ],
+          },
+        },
+      },
+      {
+        name: 'AC率',
+        type: 'line',
+        smooth: true,
+        yAxisIndex: 1,
+        data: trend.acRates,
+        showSymbol: true,
+        symbolSize: 5,
+        lineStyle: { width: 2, color: '#10b981' },
+        itemStyle: { color: '#10b981' },
+      },
+    ],
+  })
+
+  monitorDistributionChart.setOption({
+    tooltip: { trigger: 'item' },
+    legend: { bottom: 0, textStyle: { color: '#64748b' } },
+    series: [
+      {
+        type: 'pie',
+        radius: ['42%', '68%'],
+        center: ['50%', '46%'],
+        data: distribution.length ? distribution : [{ name: '暂无数据', value: 1 }],
+        label: { color: '#475569' },
+        labelLine: { length: 12, length2: 10 },
+      },
+    ],
+  })
+
+  monitorRadarChart.setOption({
+    tooltip: {},
+    radar: {
+      radius: '62%',
+      indicator: [
+        { name: '今日活跃度', max: 100 },
+        { name: '节点可用性', max: 100 },
+        { name: '排队压力', max: 100 },
+        { name: '通过率表现', max: 100 },
+        { name: '稳定性', max: 100 },
+      ],
+      splitLine: { lineStyle: { color: 'rgba(148,163,184,0.35)' } },
+      splitArea: { areaStyle: { color: ['rgba(148,163,184,0.05)', 'rgba(148,163,184,0.09)'] } },
+      axisName: { color: '#475569' },
+    },
+    series: [
+      {
+        type: 'radar',
+        data: [
+          {
+            value: radarValues,
+            name: '系统体征',
+            areaStyle: { color: 'rgba(16,185,129,0.2)' },
+            lineStyle: { color: '#10b981', width: 2 },
+            itemStyle: { color: '#10b981' },
+          },
+        ],
+      },
+    ],
+  })
+}
+
+function resizeMonitorCharts() {
+  monitorTrendChart?.resize()
+  monitorDistributionChart?.resize()
+  monitorRadarChart?.resize()
+}
+
+function disposeMonitorCharts() {
+  monitorTrendChart?.dispose()
+  monitorDistributionChart?.dispose()
+  monitorRadarChart?.dispose()
+  monitorTrendChart = null
+  monitorDistributionChart = null
+  monitorRadarChart = null
+}
+
+function startMonitorRefreshTimer() {
+  if (document.hidden) {
+    return
+  }
+  if (monitorRefreshTimer) {
+    return
+  }
+  monitorRefreshTimer = setInterval(() => {
+    if (document.hidden) {
+      return
+    }
+    if (activeTab.value === 'monitor' && monitorAutoRefresh.value) {
+      void loadMonitorDashboard()
+    }
+  }, MONITOR_REFRESH_INTERVAL_MS)
+}
+
+function stopMonitorRefreshTimer() {
+  if (!monitorRefreshTimer) {
+    return
+  }
+  clearInterval(monitorRefreshTimer)
+  monitorRefreshTimer = null
+}
+
+function handleRefreshMonitorDashboard() {
+  void loadMonitorDashboard()
+}
+
+function handleVisibilityChange() {
+  if (!monitorAutoRefresh.value || activeTab.value !== 'monitor') {
+    return
+  }
+  if (document.hidden) {
+    stopMonitorRefreshTimer()
+    return
+  }
+  void loadMonitorDashboard()
+  startMonitorRefreshTimer()
 }
 
 function configStatusLabel(value: number | string | undefined) {
@@ -569,21 +1133,47 @@ async function handleSaveConfig() {
   }
 }
 
-function goToStatusPage() {
-  void router.push('/status')
-}
-
-function goToSubmissionsPage() {
-  void router.push('/submissions')
-}
-
-function goToTeacherPage() {
-  void router.push('/teacher')
-}
-
 onMounted(async () => {
   await Promise.all([loadRoleOptions(), loadConfigCategories()])
   await Promise.all([loadUsers(1), loadConfigs(1)])
+  window.addEventListener('resize', resizeMonitorCharts)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+watch(
+  () => activeTab.value,
+  (nextTab) => {
+    if (nextTab === 'monitor') {
+      if (!monitorInitialized.value) {
+        void loadMonitorDashboard()
+      }
+      if (monitorAutoRefresh.value) {
+        startMonitorRefreshTimer()
+      }
+      return
+    }
+    stopMonitorRefreshTimer()
+  },
+)
+
+watch(
+  () => monitorAutoRefresh.value,
+  (enabled) => {
+    if (!enabled) {
+      stopMonitorRefreshTimer()
+      return
+    }
+    if (activeTab.value === 'monitor') {
+      startMonitorRefreshTimer()
+    }
+  },
+)
+
+onBeforeUnmount(() => {
+  stopMonitorRefreshTimer()
+  window.removeEventListener('resize', resizeMonitorCharts)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  disposeMonitorCharts()
 })
 </script>
 
@@ -832,17 +1422,242 @@ onMounted(async () => {
     </template>
 
     <template v-else>
+      <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">评测队列任务</p>
+          <p class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{{ monitorOverview.queueTaskCount }}</p>
+        </OjCard>
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">在线判题节点</p>
+          <p class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{{ monitorOverview.onlineNodeCount }}</p>
+        </OjCard>
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <p class="text-sm font-medium text-slate-500 dark:text-slate-400">今日提交量</p>
+          <p class="mt-3 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{{ monitorOverview.todaySubmissionCount }}</p>
+        </OjCard>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4">
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">系统运行概览</h3>
+              <OjBadge size="small" :tone="judgeServiceStatusTone(monitorOverview.serviceStatus)">
+                {{ judgeServiceStatusLabel(monitorOverview.serviceStatus) }}
+              </OjBadge>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="inline-flex cursor-pointer items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <input v-model="monitorAutoRefresh" type="checkbox" class="h-3.5 w-3.5 rounded border-slate-300" />
+                自动刷新(5s)
+              </label>
+              <OjButton size="small" tone="secondary" :loading="monitorLoading" @click="handleRefreshMonitorDashboard">
+                刷新
+              </OjButton>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <p class="text-xs text-slate-500 dark:text-slate-400">题库总量</p>
+              <p class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ monitorOverview.problemCount }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <p class="text-xs text-slate-500 dark:text-slate-400">全站AC率</p>
+              <p class="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ monitorOverview.globalAcRate.toFixed(1) }}%</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <p class="text-xs text-slate-500 dark:text-slate-400">最后更新</p>
+              <p class="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{{ monitorLastUpdated || '-' }}</p>
+            </div>
+          </div>
+          <div v-if="monitorErrorMessage" class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+            {{ monitorErrorMessage }}
+          </div>
+        </OjCard>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <OjCard tone="neutral" class="rounded-[18px] xl:col-span-2">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">系统资源监控（宿主机 + JVM）</h3>
+            <div class="flex items-center gap-2">
+              <OjBadge size="small" :tone="monitorSystemMetrics.containerized ? 'warning' : 'ac'">
+                {{ monitorSystemMetrics.containerized ? '容器内运行' : '宿主机运行' }}
+              </OjBadge>
+              <span class="text-xs text-slate-500 dark:text-slate-400">
+                {{ monitorSystemMetrics.osName }} / {{ monitorSystemMetrics.osArch }}
+              </span>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div class="mb-1 flex items-center justify-between">
+                <span class="text-xs text-slate-500 dark:text-slate-400">系统CPU</span>
+                <span class="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {{ safePercent(monitorSystemMetrics.systemCpuUsage).toFixed(1) }}%
+                </span>
+              </div>
+              <div class="monitor-meter"><span :style="{ width: `${safePercent(monitorSystemMetrics.systemCpuUsage)}%` }"></span></div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div class="mb-1 flex items-center justify-between">
+                <span class="text-xs text-slate-500 dark:text-slate-400">进程CPU</span>
+                <span class="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {{ safePercent(monitorSystemMetrics.processCpuUsage).toFixed(1) }}%
+                </span>
+              </div>
+              <div class="monitor-meter"><span :style="{ width: `${safePercent(monitorSystemMetrics.processCpuUsage)}%` }"></span></div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div class="mb-1 flex items-center justify-between">
+                <span class="text-xs text-slate-500 dark:text-slate-400">系统内存</span>
+                <span class="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {{ formatBytes(monitorSystemMetrics.systemMemoryTotal - monitorSystemMetrics.systemMemoryFree) }} / {{ formatBytes(monitorSystemMetrics.systemMemoryTotal) }}
+                </span>
+              </div>
+              <div class="monitor-meter">
+                <span
+                  :style="{
+                    width: `${safePercent((monitorSystemMetrics.systemMemoryTotal <= 0 ? 0 : ((monitorSystemMetrics.systemMemoryTotal - monitorSystemMetrics.systemMemoryFree) * 100) / monitorSystemMetrics.systemMemoryTotal))}%`,
+                  }"
+                ></span>
+              </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div class="mb-1 flex items-center justify-between">
+                <span class="text-xs text-slate-500 dark:text-slate-400">JVM堆内存</span>
+                <span class="text-xs font-medium text-slate-700 dark:text-slate-200">
+                  {{ formatBytes(monitorSystemMetrics.jvmHeapUsed) }} / {{ formatBytes(monitorSystemMetrics.jvmHeapTotal) }}
+                </span>
+              </div>
+              <div class="monitor-meter">
+                <span
+                  :style="{
+                    width: `${safePercent((monitorSystemMetrics.jvmHeapTotal <= 0 ? 0 : (monitorSystemMetrics.jvmHeapUsed * 100) / monitorSystemMetrics.jvmHeapTotal))}%`,
+                  }"
+                ></span>
+              </div>
+            </div>
+          </div>
+        </OjCard>
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">资源摘要</h3>
+          <dl class="mt-3 space-y-2 text-sm">
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">系统负载</dt>
+              <dd class="font-medium text-slate-800 dark:text-slate-200">{{ monitorSystemMetrics.systemLoadAverage.toFixed(2) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">磁盘可用</dt>
+              <dd class="font-medium text-slate-800 dark:text-slate-200">{{ formatBytes(monitorSystemMetrics.diskUsable) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">磁盘总量</dt>
+              <dd class="font-medium text-slate-800 dark:text-slate-200">{{ formatBytes(monitorSystemMetrics.diskTotal) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">进程运行时长</dt>
+              <dd class="font-medium text-slate-800 dark:text-slate-200">{{ formatDuration(monitorSystemMetrics.processUptimeMs) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">采集时间</dt>
+              <dd class="text-xs font-medium text-slate-700 dark:text-slate-300">{{ monitorSystemMetrics.collectedAt || '-' }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-500 dark:text-slate-400">容器线索</dt>
+              <dd class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                {{ monitorSystemMetrics.containerHint || '-' }}
+              </dd>
+            </div>
+          </dl>
+        </OjCard>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <OjCard tone="neutral" class="rounded-[18px] xl:col-span-2">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">近7日提交趋势</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">真实每日聚合（提交量 + AC率）</span>
+          </div>
+          <div ref="monitorTrendChartRef" class="monitor-chart"></div>
+        </OjCard>
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">结果分布</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">最近样本</span>
+          </div>
+          <div ref="monitorDistributionChartRef" class="monitor-chart monitor-chart--compact"></div>
+        </OjCard>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4">
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">监控体征雷达图</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">综合活跃度/可用性/稳定性</span>
+          </div>
+          <div ref="monitorRadarChartRef" class="monitor-chart monitor-chart--radar"></div>
+        </OjCard>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">最近提交</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">展示最近 8 条</span>
+          </div>
+          <el-table v-loading="monitorLoading" :data="monitorRecentSubmissions" height="320" table-layout="fixed">
+            <el-table-column label="用户" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ monitorUserLabel(row) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="题目" min-width="160" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ monitorProblemLabel(row) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="结果" width="110">
+              <template #default="{ row }">
+                <OjBadge size="small" :tone="submissionStatusTone(row.status)">
+                  {{ submissionStatusLabel(row.status) }}
+                </OjBadge>
+              </template>
+            </el-table-column>
+            <el-table-column prop="language" label="语言" width="96" />
+          </el-table>
+        </OjCard>
+
+        <OjCard tone="neutral" class="rounded-[18px]">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">近期比赛 / 作业</h3>
+            <span class="text-xs text-slate-500 dark:text-slate-400">来自首页概览</span>
+          </div>
+          <el-table v-loading="monitorLoading" :data="monitorRecentContests" height="320" table-layout="fixed">
+            <el-table-column label="类型" width="90">
+              <template #default="{ row }">
+                {{ monitorTypeLabel(row.type) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="title" label="标题" min-width="190" show-overflow-tooltip />
+            <el-table-column label="状态" width="110">
+              <template #default="{ row }">
+                <OjBadge size="small" :tone="monitorContestStatusTone(row.statusText)">
+                  {{ row.statusText || '-' }}
+                </OjBadge>
+              </template>
+            </el-table-column>
+            <el-table-column prop="startTime" label="开始时间" min-width="160" show-overflow-tooltip />
+          </el-table>
+        </OjCard>
+      </section>
+
       <OjEmptyState
-        title="数据监控入口"
-        description="系统运行监控、最新提交与成绩统计已拆分到独立页面。可从这里快速跳转到对应工作台。"
+        v-if="!monitorLoading && !monitorErrorMessage && monitorRecentSubmissions.length === 0 && monitorRecentContests.length === 0"
+        title="暂无可展示监控数据"
+        description="当前未查询到最近提交和近期比赛信息，可稍后刷新重试。"
         tone="neutral"
-      >
-        <template #actions>
-          <OjButton tone="info" size="small" @click="goToStatusPage">评测状态</OjButton>
-          <OjButton tone="secondary" size="small" @click="goToSubmissionsPage">提交记录</OjButton>
-          <OjButton tone="secondary" size="small" @click="goToTeacherPage">教师工作台</OjButton>
-        </template>
-      </OjEmptyState>
+      />
     </template>
 
     <OjModal
@@ -1069,6 +1884,35 @@ onMounted(async () => {
   justify-content: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+.monitor-meter {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(226 232 240 / 0.8);
+}
+
+.monitor-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e 0%, #10b981 60%, #0ea5e9 100%);
+  transition: width 0.3s ease;
+}
+
+.monitor-chart {
+  width: 100%;
+  min-height: 280px;
+}
+
+.monitor-chart--compact {
+  min-height: 280px;
+}
+
+.monitor-chart--radar {
+  min-height: 320px;
 }
 
 @media (min-width: 768px) {

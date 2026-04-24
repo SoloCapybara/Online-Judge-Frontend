@@ -142,6 +142,20 @@ const categoryText = computed(() => {
   return detail.categoryName?.trim() || detail.categoryId || '未分类'
 })
 
+const problemTagNames = computed(() => {
+  const detail = problem.value
+  if (!detail) {
+    return []
+  }
+  if (Array.isArray(detail.tagNames) && detail.tagNames.length > 0) {
+    return detail.tagNames.filter((item) => item && item.trim())
+  }
+  if (Array.isArray(detail.tagList) && detail.tagList.length > 0) {
+    return detail.tagList.map((item) => item.tagName).filter((item) => item && item.trim())
+  }
+  return []
+})
+
 const judgeModeText = computed(() => {
   const value = (problem.value?.judgeMode ?? '').toUpperCase()
   return value || 'ACM'
@@ -812,6 +826,14 @@ onMounted(() => {
             <div class="mt-3 flex flex-wrap gap-2">
               <OjBadge size="small" :tone="difficultyMeta.tone">{{ difficultyMeta.label }}</OjBadge>
               <OjBadge size="small" tone="primary">{{ categoryText }}</OjBadge>
+              <OjBadge
+                v-for="tagName in problemTagNames"
+                :key="tagName"
+                size="small"
+                tone="neutral"
+              >
+                {{ tagName }}
+              </OjBadge>
               <OjBadge size="small" tone="neutral">{{ judgeModeText }}</OjBadge>
               <OjBadge size="small" :tone="statusMeta.tone">{{ statusMeta.label }}</OjBadge>
               <OjBadge v-if="inContestMode" size="small" tone="warning">比赛模式 #{{ contestId }}</OjBadge>

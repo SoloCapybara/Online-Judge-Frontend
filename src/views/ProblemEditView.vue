@@ -22,6 +22,7 @@ import { ojMessage } from '../utils/message'
 type ProblemEditForm = {
   title: string
   categoryId: string
+  tagText: string
   content: string
   inputDesc: string
   outputDesc: string
@@ -61,6 +62,7 @@ const categoryOptions = ref<Array<{ label: string; value: string }>>([
 const form = reactive<ProblemEditForm>({
   title: '',
   categoryId: '',
+  tagText: '',
   content: '',
   inputDesc: '',
   outputDesc: '',
@@ -123,6 +125,17 @@ function toOptionalString(value: string) {
   return trimmed || undefined
 }
 
+function parseTagText(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[,，;；\s]+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 function createEditableCase(source: Partial<ProblemCaseVO> | null | undefined, index: number): EditableCase {
   const caseNo = source?.caseNo !== undefined && source.caseNo !== null ? String(source.caseNo) : String(index + 1)
   const score = source?.score !== undefined && source.score !== null ? String(source.score) : '0'
@@ -162,6 +175,7 @@ function fillForm(problem: ProblemVO) {
   problemIdLabel.value = String(problem.id ?? problemId.value)
   form.title = problem.title ?? ''
   form.categoryId = problem.categoryId ?? ''
+  form.tagText = Array.isArray(problem.tagNames) ? problem.tagNames.join('，') : ''
   form.content = problem.content ?? ''
   form.inputDesc = problem.inputDesc ?? ''
   form.outputDesc = problem.outputDesc ?? ''
@@ -205,6 +219,7 @@ function resetFormForCreate() {
   problemIdLabel.value = ''
   form.title = ''
   form.categoryId = ''
+  form.tagText = ''
   form.content = ''
   form.inputDesc = ''
   form.outputDesc = ''
@@ -357,6 +372,7 @@ function buildPayload(): ProblemCreateRequest | null {
 
   const payload: ProblemCreateRequest = {
     title,
+    tagNames: parseTagText(form.tagText),
     content,
     inputDesc: toOptionalString(form.inputDesc),
     outputDesc: toOptionalString(form.outputDesc),
@@ -495,6 +511,11 @@ watch(
                   <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">难度 <span class="text-rose-500">*</span></label>
                   <OjSelect v-model="form.difficulty" :options="difficultyOptions" />
                 </div>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">标签</label>
+                <OjInput v-model="form.tagText" placeholder="例如：数组，双指针，动态规划" clearable />
               </div>
 
               <div class="grid gap-4 sm:grid-cols-3">

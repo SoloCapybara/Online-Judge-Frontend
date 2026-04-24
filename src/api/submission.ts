@@ -75,6 +75,32 @@ export interface JudgeOverviewVO {
   todaySubmissionCount: number
 }
 
+export interface JudgeDailyStatsVO {
+  statDate: string
+  submitCount: number
+  acceptedCount: number
+  acRate: number
+}
+
+export interface JudgeSystemMetricsVO {
+  osName: string
+  osArch: string
+  systemCpuUsage: number
+  processCpuUsage: number
+  systemLoadAverage: number
+  systemMemoryTotal: number
+  systemMemoryFree: number
+  jvmHeapTotal: number
+  jvmHeapUsed: number
+  diskTotal: number
+  diskUsable: number
+  processUptimeMs: number
+  containerized: boolean
+  runtimeEnvironment: 'HOST' | 'CONTAINER' | string
+  containerHint?: string
+  collectedAt: string
+}
+
 export interface PageResult<T> {
   current: number
   total: number
@@ -121,4 +147,16 @@ export async function rejudgeSubmission(
 export async function getJudgeOverview(): Promise<BaseResponse<JudgeOverviewVO>> {
   const response = await request.get('/judge/overview')
   return response as unknown as BaseResponse<JudgeOverviewVO>
+}
+
+export async function getJudgeDailyStats(days = 7): Promise<BaseResponse<JudgeDailyStatsVO[]>> {
+  const response = await request.get('/judge/daily-stats', {
+    params: { days },
+  })
+  return response as unknown as BaseResponse<JudgeDailyStatsVO[]>
+}
+
+export async function getJudgeSystemMetrics(): Promise<BaseResponse<JudgeSystemMetricsVO>> {
+  const response = await request.get('/judge/system-metrics')
+  return response as unknown as BaseResponse<JudgeSystemMetricsVO>
 }

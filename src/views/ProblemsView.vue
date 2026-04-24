@@ -6,8 +6,10 @@ import {
   deleteProblem,
   getProblemCategoryList,
   getProblemPage,
+  getProblemTagList,
   type ProblemCategoryVO,
   type ProblemPageQueryRequest,
+  type ProblemTagVO,
   type ProblemVO,
 } from '../api/problem'
 import OjBadge from '../components/ui/OjBadge.vue'
@@ -23,6 +25,7 @@ import { ojMessage } from '../utils/message'
 type FilterForm = {
   title: string
   categoryId: string
+  tagId: string
   difficulty: string
   status: string
 }
@@ -39,6 +42,9 @@ const categoryOptions = ref<Array<{ label: string; value: string }>>([
   { label: '全部分类', value: '' },
 ])
 const categoryNameMap = ref<Record<string, string>>({})
+const tagOptions = ref<Array<{ label: string; value: string }>>([
+  { label: '全部标签', value: '' },
+])
 
 const canManageProblems = computed(() => userStore.role === 'teacher' || userStore.role === 'admin')
 
@@ -52,6 +58,7 @@ const pageState = reactive({
 const filterForm = reactive<FilterForm>({
   title: '',
   categoryId: '',
+  tagId: '',
   difficulty: '',
   status: '',
 })
@@ -99,17 +106,45 @@ function resolveErrorMessage(error: unknown) {
 function buildQuery(current = pageState.current): ProblemPageQueryRequest {
   const title = filterForm.title.trim()
   const categoryId = toOptionalString(filterForm.categoryId)
+  const tagId = toOptionalString(filterForm.tagId)
   return {
     current,
     pageSize: pageState.pageSize,
     ...(title ? { title } : {}),
     ...(categoryId !== undefined ? { categoryId } : {}),
+    ...(tagId !== undefined ? { tagId } : {}),
     ...(toOptionalNumber(filterForm.difficulty) !== undefined
       ? { difficulty: toOptionalNumber(filterForm.difficulty) }
       : {}),
     ...(toOptionalNumber(filterForm.status) !== undefined
       ? { status: toOptionalNumber(filterForm.status) }
       : {}),
+  }
+}
+
+function buildTagOptions(tags: ProblemTagVO[]) {
+  const options: Array<{ label: string; value: string }> = [{ label: '全部标签', value: '' }]
+  tags.forEach((item) => {
+    const id = String(item.id ?? '').trim()
+    const name = String(item.tagName ?? '').trim()
+    if (!id || !name) {
+      return
+    }
+    options.push({ label: name, value: id })
+  })
+  tagOptions.value = options
+}
+
+async function loadTags() {
+  try {
+    const response = await getProblemTagList()
+    if (response.code !== 0 || !Array.isArray(response.data)) {
+      throw new Error(response.message || '标签加载失败')
+    }
+    buildTagOptions(response.data)
+  } catch (error) {
+    tagOptions.value = [{ label: '全部标签', value: '' }]
+    ojMessage.error(resolveErrorMessage(error))
   }
 }
 
@@ -179,6 +214,7 @@ function handleSearch() {
 function handleReset() {
   filterForm.title = ''
   filterForm.categoryId = ''
+  filterForm.tagId = ''
   filterForm.difficulty = ''
   filterForm.status = ''
   pageState.current = 1
@@ -304,6 +340,16 @@ function categoryLabel(row: ProblemVO) {
   return categoryNameMap.value[row.categoryId] || '未分类'
 }
 
+function tagNames(row: ProblemVO) {
+  if (Array.isArray(row.tagNames) && row.tagNames.length > 0) {
+    return row.tagNames.filter((item) => item && item.trim())
+  }
+  if (Array.isArray(row.tagList) && row.tagList.length > 0) {
+    return row.tagList.map((item) => item.tagName).filter((item) => item && item.trim())
+  }
+  return []
+}
+
 function creatorLabel(row: ProblemVO) {
   const realName = row.creatorRealName?.trim()
   if (realName) {
@@ -378,6 +424,7 @@ function formatDateTime(raw: string | null | undefined) {
 onMounted(() => {
   void Promise.all([
     loadCategories(),
+    loadTags(),
     loadProblems(1),
   ])
 })
@@ -387,7 +434,7 @@ onMounted(() => {
   <section class="oj-page">
     <OjTableLayout :loading="loading" loading-text="加载题目中...">
       <template #filters>
-        <form class="oj-table-filter-grid grid gap-2 lg:grid-cols-[minmax(0,1fr)_156px_140px_140px_auto]" @submit.prevent="handleSearch">
+        <form class="oj-table-filter-grid grid gap-2 lg:grid-cols-[minmax(0,1fr)_140px_140px_120px_120px_auto]" @submit.prevent="handleSearch">
           <OjInput
             v-model="filterForm.title"
             placeholder="搜索标题或题号关键词"
@@ -398,6 +445,12 @@ onMounted(() => {
             v-model="filterForm.categoryId"
             :options="categoryOptions"
             placeholder="分类"
+          />
+
+          <OjSelect
+            v-model="filterForm.tagId"
+            :options="tagOptions"
+            placeholder="标签"
           />
 
           <OjSelect
@@ -484,6 +537,23 @@ onMounted(() => {
               <span class="problem-cell-ellipsis" :title="categoryLabel(row)">
                 {{ categoryLabel(row) }}
               </span>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="标签" width="150" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div v-if="tagNames(row).length" class="problem-tag-list" :title="tagNames(row).join('、')">
+                <OjBadge
+                  v-for="name in tagNames(row).slice(0, 2)"
+                  :key="name"
+                  size="small"
+                  tone="neutral"
+                >
+                  {{ name }}
+                </OjBadge>
+                <span v-if="tagNames(row).length > 2" class="problem-tag-more">+{{ tagNames(row).length - 2 }}</span>
+              </div>
+              <span v-else class="text-xs text-slate-400">-</span>
             </template>
           </el-table-column>
 
@@ -665,6 +735,20 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.problem-tag-list {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.problem-tag-more {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--oj-muted);
 }
 
 .problem-delete-footer {
