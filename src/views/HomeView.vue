@@ -20,11 +20,6 @@ const recentSubmissions = computed(() => (
   Array.isArray(overview.value?.recentSubmissions) ? overview.value?.recentSubmissions ?? [] : []
 ))
 
-const announcements = computed(() => recentContests.value.slice(0, 4).map((item) => ({
-  title: `${typeLabel(item.type)}「${item.title}」`,
-  desc: `${String(item.statusText || '未知')} · ${formatDateTime(item.startTime)} ~ ${formatDateTime(item.endTime)}`,
-})))
-
 const headline = computed(() => {
   if (!recentContests.value.length) {
     return '平台首页数据已接入真实接口'
@@ -279,7 +274,7 @@ onMounted(() => {
       </OjCard>
     </section>
 
-    <section class="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <section>
       <OjCard tone="neutral" class="rounded-xl">
         <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-4 dark:border-white/[0.06]">
           <h2 class="text-[0.9375rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100">最近比赛</h2>
@@ -304,30 +299,6 @@ onMounted(() => {
             <div class="flex shrink-0 items-center gap-2">
               <OjBadge size="small" tone="neutral">{{ typeLabel(item.type) }}</OjBadge>
               <OjBadge size="small" :tone="contestStatusTone(item.statusText)">{{ item.statusText || '未知' }}</OjBadge>
-            </div>
-          </div>
-        </div>
-      </OjCard>
-
-      <OjCard tone="neutral" class="rounded-xl">
-        <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-200 pb-4 dark:border-white/[0.06]">
-          <h2 class="text-[0.9375rem] font-semibold tracking-tight text-slate-900 dark:text-slate-100">公告与赛程</h2>
-          <RouterLink to="/contests" class="text-sm font-medium text-violet-600 underline-offset-4 hover:underline dark:text-violet-400">查看全部</RouterLink>
-        </div>
-        <div v-if="!announcements.length" class="py-3 text-sm text-slate-500 dark:text-slate-400">
-          暂无公告
-        </div>
-        <div v-else class="flex flex-col">
-          <div
-            v-for="(item, index) in announcements"
-            :key="item.title"
-            class="flex gap-3 py-3.5"
-            :class="index === announcements.length - 1 ? '' : 'border-b border-slate-200 dark:border-white/[0.06]'"
-          >
-            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400 dark:bg-slate-500" aria-hidden="true"></span>
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{{ item.title }}</p>
-              <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ item.desc }}</p>
             </div>
           </div>
         </div>

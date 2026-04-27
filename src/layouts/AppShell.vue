@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  DataLine,
   Files,
   House,
   Medal,
@@ -27,7 +26,6 @@ type MenuKey =
   | '/problems'
   | '/contests'
   | '/submissions'
-  | '/status'
   | '/rank'
   | '/user-center'
   | '/discuss'
@@ -67,7 +65,6 @@ const menuItems: MenuItem[] = [
   { key: '/problems', label: '题库', icon: Files, roles: ['student', 'teacher', 'admin'], section: '练习' },
   { key: '/contests', label: '比赛', icon: Medal, roles: ['student', 'teacher', 'admin'], section: '练习' },
   { key: '/submissions', label: '提交记录', icon: Tickets, roles: ['student', 'teacher', 'admin'], section: '练习' },
-  { key: '/status', label: '评测状态', icon: DataLine, roles: ['student', 'teacher', 'admin'], section: '练习' },
   { key: '/rank', label: '排行榜', icon: Medal, roles: ['student', 'teacher', 'admin'], section: '练习' },
   { key: '/help', label: '帮助 / FAQ', icon: QuestionFilled, roles: ['student', 'teacher', 'admin'], section: '社区' },
   { key: '/teacher', label: '教师工作台', icon: Tickets, roles: ['teacher'], section: '工作台' },
@@ -106,9 +103,6 @@ const activeMenu = computed<MenuKey>(() => {
   }
   if (route.path.startsWith('/contests')) {
     return '/contests'
-  }
-  if (route.path.startsWith('/status')) {
-    return '/status'
   }
   if (route.path.startsWith('/submissions')) {
     return '/submissions'

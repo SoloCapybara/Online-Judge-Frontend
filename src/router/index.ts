@@ -52,8 +52,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'status',
         name: 'status',
-        component: () => import('../views/StatusView.vue'),
-        meta: { title: '评测状态' },
+        redirect: '/admin',
       },
       {
         path: 'submissions',

@@ -159,41 +159,37 @@ onMounted(() => {
 
 <template>
   <section class="oj-page">
-    <OjCard tone="primary" class="rounded-[20px]">
-      <div class="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <div class="space-y-3">
-          <div class="oj-kicker">提交概览</div>
-          <div>
-            <h1 class="oj-page-title">评测状态</h1>
-            <p class="oj-page-subtitle">已接入后端实时统计，可查看队列、节点、今日提交量和最新提交结果。</p>
-          </div>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <OjCard tone="neutral" class="rounded-2xl">
-            <div class="text-xs uppercase tracking-[0.12em] text-slate-400">队列任务</div>
-            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.queueTaskCount }}</div>
-          </OjCard>
-          <OjCard tone="neutral" class="rounded-2xl">
-            <div class="text-xs uppercase tracking-[0.12em] text-slate-400">在线节点</div>
-            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.onlineNodeCount }}</div>
-          </OjCard>
-          <OjCard tone="neutral" class="rounded-2xl">
-            <div class="text-xs uppercase tracking-[0.12em] text-slate-400">今日提交量</div>
-            <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.todaySubmissionCount }}</div>
-          </OjCard>
-          <OjCard :tone="serviceStatusTone(overview.serviceStatus)" class="rounded-2xl">
-            <div class="text-xs uppercase tracking-[0.12em] text-slate-400">服务状态</div>
-            <div class="mt-2 text-lg font-semibold">{{ serviceStatusLabel(overview.serviceStatus) }}</div>
-          </OjCard>
-        </div>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="oj-page-title">评测状态</h1>
+        <p class="oj-page-subtitle">实时查看队列、节点与最近提交状态。</p>
       </div>
-    </OjCard>
+      <OjButton tone="secondary" size="small" :loading="loading" @click="loadStatusData">刷新状态</OjButton>
+    </div>
+
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <OjCard tone="neutral" class="rounded-2xl">
+        <div class="text-xs uppercase tracking-[0.12em] text-slate-400">队列任务</div>
+        <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.queueTaskCount }}</div>
+      </OjCard>
+      <OjCard tone="neutral" class="rounded-2xl">
+        <div class="text-xs uppercase tracking-[0.12em] text-slate-400">在线节点</div>
+        <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.onlineNodeCount }}</div>
+      </OjCard>
+      <OjCard tone="neutral" class="rounded-2xl">
+        <div class="text-xs uppercase tracking-[0.12em] text-slate-400">今日提交量</div>
+        <div class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ overview.todaySubmissionCount }}</div>
+      </OjCard>
+      <OjCard :tone="serviceStatusTone(overview.serviceStatus)" class="rounded-2xl">
+        <div class="text-xs uppercase tracking-[0.12em] text-slate-400">服务状态</div>
+        <div class="mt-2 text-lg font-semibold">{{ serviceStatusLabel(overview.serviceStatus) }}</div>
+      </OjCard>
+    </div>
 
     <OjCard tone="neutral" class="rounded-[20px]">
       <div class="mb-3 flex items-center justify-between gap-3">
         <h2 class="text-base font-semibold text-slate-900 dark:text-slate-100">最新提交</h2>
-        <OjButton tone="secondary" size="small" :loading="loading" @click="loadStatusData">刷新</OjButton>
+        <OjButton tone="secondary" size="small" :loading="loading" @click="loadStatusData">刷新列表</OjButton>
       </div>
 
       <div v-if="errorMessage" class="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">

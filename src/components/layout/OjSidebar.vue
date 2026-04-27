@@ -85,20 +85,6 @@ const emit = defineEmits<{
       </section>
     </div>
 
-    <div class="sidebar-footer-btns mt-auto shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/[0.06] dark:bg-[#181c2a]">
-      <p class="sidebar-footer-prose mb-3 text-[0.8rem] leading-relaxed text-slate-500 dark:text-slate-400">
-        判题机队列空闲 · 平均等待 &lt; 2s。支持 C/C++/Java/Python/Go。
-      </p>
-      <button
-        type="button"
-        class="sidebar-footer-btn flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-transparent py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-100 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]"
-      >
-        <svg class="h-4 w-4 shrink-0 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-        </svg>
-        <span class="footer-btn-label">查看评测机状态</span>
-      </button>
-    </div>
   </aside>
 </template>
 

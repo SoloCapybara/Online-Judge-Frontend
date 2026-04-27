@@ -2,7 +2,7 @@ import { computed, readonly, ref } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 const STORAGE_KEY = 'oj-workspace-tabs'
-const HIDDEN_TAB_KEYS = new Set(['/ui-demo'])
+const HIDDEN_TAB_KEYS = new Set(['/ui-demo', '/status'])
 
 export interface WorkspaceRegistryItem {
   key: string
@@ -34,7 +34,7 @@ function loadStoredTabs(): WorkspaceTab[] {
       return []
     }
 
-    return parsed.filter((tab) => !HIDDEN_TAB_KEYS.has(tab.key))
+    return parsed.filter((tab) => !isHiddenTab(tab.key))
   } catch {
     return []
   }
@@ -46,6 +46,10 @@ function saveTabs() {
   }
 
   window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(tabs.value))
+}
+
+function isHiddenTab(key: string) {
+  return HIDDEN_TAB_KEYS.has(key) || key.startsWith('/status')
 }
 
 function ensureInitialized() {
@@ -76,6 +80,9 @@ function resolveRouteTitle(route: RouteLocationNormalizedLoaded) {
 
 function routeToTab(route: RouteLocationNormalizedLoaded): WorkspaceTab | null {
   if (route.path === '/login') {
+    return null
+  }
+  if (isHiddenTab(route.path)) {
     return null
   }
 
