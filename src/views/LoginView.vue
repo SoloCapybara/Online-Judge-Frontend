@@ -100,6 +100,7 @@ function applyUserSession(
   nextAvatar = '',
   nextUserId = '',
   nextUsername = '',
+  nextPermissionCodes: string[] = [],
 ) {
   type UserStoreCompat = {
     setSession?: (
@@ -109,6 +110,7 @@ function applyUserSession(
       avatar?: string,
       userId?: string,
       username?: string,
+      permissionCodes?: string[],
     ) => void
     login?: (role: UserRole, displayName?: string, avatar?: string) => void
     $patch?: (state: Record<string, unknown>) => void
@@ -118,12 +120,13 @@ function applyUserSession(
     username?: string
     displayName?: string
     avatar?: string
+    permissionCodes?: string[]
   }
 
   const store = userStore as unknown as UserStoreCompat
 
   if (typeof store.setSession === 'function') {
-    store.setSession(nextToken, nextRole, nextDisplayName, nextAvatar, nextUserId, nextUsername)
+    store.setSession(nextToken, nextRole, nextDisplayName, nextAvatar, nextUserId, nextUsername, nextPermissionCodes)
     return
   }
 
@@ -138,6 +141,7 @@ function applyUserSession(
     username: nextUsername,
     displayName: nextDisplayName,
     avatar: nextAvatar,
+    permissionCodes: nextPermissionCodes,
   })
 
   store.token = nextToken
@@ -146,6 +150,7 @@ function applyUserSession(
   store.username = nextUsername
   store.displayName = nextDisplayName
   store.avatar = nextAvatar
+  store.permissionCodes = nextPermissionCodes
 
   localStorage.setItem('oj-token', nextToken)
   localStorage.setItem('oj-role', nextRole)
@@ -165,6 +170,7 @@ function applyUserSession(
   } else {
     localStorage.removeItem('oj-avatar')
   }
+  localStorage.setItem('oj-permission-codes', JSON.stringify(nextPermissionCodes))
 }
 
 function persistRememberPreference() {
@@ -246,6 +252,7 @@ async function handleLogin() {
       userInfo.avatar || '',
       userInfo.id || '',
       userInfo.username || payload.username,
+      Array.isArray(userInfo.permissionCodes) ? userInfo.permissionCodes : [],
     )
     ojMessage.success('登录成功')
     await router.push('/')

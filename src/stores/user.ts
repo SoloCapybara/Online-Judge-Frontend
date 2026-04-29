@@ -3,6 +3,24 @@ import { defineStore } from 'pinia'
 
 export type UserRole = 'student' | 'teacher' | 'admin'
 
+function resolveStoredPermissions(value: string | null): string[] {
+  if (!value) {
+    return []
+  }
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+    return parsed
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0)
+  } catch {
+    return []
+  }
+}
+
 function resolveStoredRole(value: string | null): UserRole {
   if (value === 'teacher' || value === 'admin' || value === 'student') {
     return value
@@ -18,6 +36,7 @@ export const useUserStore = defineStore('user', () => {
   const username = ref(localStorage.getItem('oj-username') ?? '')
   const displayName = ref(localStorage.getItem('oj-display-name') ?? '')
   const avatar = ref(localStorage.getItem('oj-avatar') ?? '')
+  const permissionCodes = ref<string[]>(resolveStoredPermissions(localStorage.getItem('oj-permission-codes')))
 
   const isLoggedIn = computed(() => token.value.length > 0)
   const roleLabel = computed(() => {
@@ -38,6 +57,7 @@ export const useUserStore = defineStore('user', () => {
     nextAvatar = '',
     nextUserId = '',
     nextUsername = '',
+    nextPermissionCodes: string[] = [],
   ) {
     token.value = nextToken
     role.value = nextRole
@@ -45,6 +65,7 @@ export const useUserStore = defineStore('user', () => {
     username.value = nextUsername
     displayName.value = nextDisplayName
     avatar.value = nextAvatar
+    permissionCodes.value = nextPermissionCodes
     localStorage.setItem('oj-token', token.value)
     localStorage.setItem('oj-role', role.value)
     if (userId.value) {
@@ -63,10 +84,11 @@ export const useUserStore = defineStore('user', () => {
     } else {
       localStorage.removeItem('oj-avatar')
     }
+    localStorage.setItem('oj-permission-codes', JSON.stringify(permissionCodes.value))
   }
 
   function login(nextRole: UserRole, nextDisplayName = '邓旭东', nextAvatar = '') {
-    setSession(`mock-token-${nextRole}`, nextRole, nextDisplayName, nextAvatar, '', '')
+    setSession(`mock-token-${nextRole}`, nextRole, nextDisplayName, nextAvatar, '', '', [])
   }
 
   function setDisplayName(nextDisplayName: string) {
@@ -94,12 +116,14 @@ export const useUserStore = defineStore('user', () => {
     username.value = ''
     displayName.value = ''
     avatar.value = ''
+    permissionCodes.value = []
     localStorage.removeItem('oj-token')
     localStorage.removeItem('oj-role')
     localStorage.removeItem('oj-user-id')
     localStorage.removeItem('oj-username')
     localStorage.removeItem('oj-display-name')
     localStorage.removeItem('oj-avatar')
+    localStorage.removeItem('oj-permission-codes')
   }
 
   return {
@@ -109,6 +133,7 @@ export const useUserStore = defineStore('user', () => {
     username,
     displayName,
     avatar,
+    permissionCodes,
     isLoggedIn,
     roleLabel,
     setSession,

@@ -35,6 +35,7 @@ export interface LoginUserInfo {
   avatar: string
   status: number
   roles: string[]
+  permissionCodes: string[]
 }
 
 export interface LoginResult {

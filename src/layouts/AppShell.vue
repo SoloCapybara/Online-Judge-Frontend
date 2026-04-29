@@ -31,12 +31,14 @@ type MenuKey =
   | '/discuss'
   | '/help'
   | '/teacher'
+  | '/admin/permissions'
   | '/admin'
 type MenuItem = {
   key: MenuKey
   label: string
   icon: Component
   roles: UserRole[]
+  permissionCode?: string
   section: '练习' | '社区' | '工作台'
   affix?: boolean
 }
@@ -61,19 +63,32 @@ const logoutConfirmOpen = ref(false)
 const logoutLoading = ref(false)
 
 const menuItems: MenuItem[] = [
-  { key: '/', label: '首页', icon: House, roles: ['student', 'teacher', 'admin'], section: '练习', affix: true },
-  { key: '/problems', label: '题库', icon: Files, roles: ['student', 'teacher', 'admin'], section: '练习' },
-  { key: '/contests', label: '比赛', icon: Medal, roles: ['student', 'teacher', 'admin'], section: '练习' },
-  { key: '/submissions', label: '提交记录', icon: Tickets, roles: ['student', 'teacher', 'admin'], section: '练习' },
-  { key: '/rank', label: '排行榜', icon: Medal, roles: ['student', 'teacher', 'admin'], section: '练习' },
-  { key: '/help', label: '帮助 / FAQ', icon: QuestionFilled, roles: ['student', 'teacher', 'admin'], section: '社区' },
-  { key: '/teacher', label: '教师工作台', icon: Tickets, roles: ['teacher'], section: '工作台' },
-  { key: '/admin', label: '管理台', icon: Monitor, roles: ['admin'], section: '工作台' },
+  { key: '/', label: '首页', icon: House, roles: ['student', 'teacher', 'admin'], permissionCode: 'MENU_HOME', section: '练习', affix: true },
+  { key: '/problems', label: '题库', icon: Files, roles: ['student', 'teacher', 'admin'], permissionCode: 'MENU_PROBLEMS', section: '练习' },
+  { key: '/contests', label: '比赛', icon: Medal, roles: ['student', 'teacher', 'admin'], permissionCode: 'MENU_CONTESTS', section: '练习' },
+  { key: '/submissions', label: '提交记录', icon: Tickets, roles: ['student', 'teacher', 'admin'], permissionCode: 'MENU_SUBMISSIONS', section: '练习' },
+  { key: '/rank', label: '排行榜', icon: Medal, roles: ['student', 'teacher', 'admin'], permissionCode: 'MENU_RANK', section: '练习' },
+  { key: '/help', label: '帮助 / FAQ', icon: QuestionFilled, roles: ['student', 'teacher', 'admin'], permissionCode: 'MENU_HELP', section: '社区' },
+  { key: '/teacher', label: '教师工作台', icon: Tickets, roles: ['teacher'], permissionCode: 'MENU_TEACHER', section: '工作台' },
+  { key: '/admin/permissions', label: '权限中心', icon: Monitor, roles: ['admin'], permissionCode: 'MENU_ADMIN', section: '工作台' },
+  { key: '/admin', label: '管理台', icon: Monitor, roles: ['admin'], permissionCode: 'MENU_ADMIN', section: '工作台' },
 ]
 
-const visibleMenuItems = computed(() =>
-  menuItems.filter((item) => item.roles.includes(userStore.role)),
-)
+const visibleMenuItems = computed(() => {
+  if (userStore.role === 'admin') {
+    return menuItems.filter((item) => item.roles.includes(userStore.role))
+  }
+  const allowedCodes = new Set((userStore.permissionCodes || []).map((item) => item.trim().toUpperCase()))
+  return menuItems.filter((item) => {
+    if (!item.roles.includes(userStore.role)) {
+      return false
+    }
+    if (!item.permissionCode) {
+      return true
+    }
+    return allowedCodes.has(item.permissionCode.toUpperCase())
+  })
+})
 
 const sidebarSections = computed(() => {
   const orderedSections: Array<MenuItem['section']> = ['练习', '社区', '工作台']
@@ -123,6 +138,9 @@ const activeMenu = computed<MenuKey>(() => {
     return '/teacher'
   }
   if (route.path.startsWith('/admin')) {
+    if (route.path.startsWith('/admin/permissions')) {
+      return '/admin/permissions'
+    }
     return '/admin'
   }
   return '/'

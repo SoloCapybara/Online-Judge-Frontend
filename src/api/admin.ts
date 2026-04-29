@@ -25,6 +25,30 @@ export interface AdminRoleOptionVO {
   roleName: string
 }
 
+export interface AdminPermissionVO {
+  id: string
+  permissionCode: string
+  permissionName: string
+  permissionType: 'MENU' | 'API' | 'BUTTON' | string
+  path?: string
+  method?: string
+  parentId?: string
+  sortNo?: number
+  status: number
+  description?: string
+}
+
+export interface AdminRolePermissionVO {
+  roleCode: string
+  roleName: string
+  permissionCodes: string[]
+}
+
+export interface AdminRolePermissionUpdateRequest {
+  roleCode: string
+  permissionCodes: string[]
+}
+
 export interface AdminUserPageQueryRequest {
   current?: number
   pageSize?: number
@@ -136,5 +160,22 @@ export async function updateAdminSystemConfig(
   payload: AdminSystemConfigUpdateRequest,
 ): Promise<BaseResponse<boolean>> {
   const response = await request.put(`/admin/config/${configId}`, payload)
+  return response as unknown as BaseResponse<boolean>
+}
+
+export async function getAdminPermissionList(): Promise<BaseResponse<AdminPermissionVO[]>> {
+  const response = await request.get('/admin/permissions')
+  return response as unknown as BaseResponse<AdminPermissionVO[]>
+}
+
+export async function getAdminRolePermissionList(): Promise<BaseResponse<AdminRolePermissionVO[]>> {
+  const response = await request.get('/admin/permissions/roles')
+  return response as unknown as BaseResponse<AdminRolePermissionVO[]>
+}
+
+export async function updateAdminRolePermissions(
+  payload: AdminRolePermissionUpdateRequest,
+): Promise<BaseResponse<boolean>> {
+  const response = await request.put('/admin/permissions/roles', payload)
   return response as unknown as BaseResponse<boolean>
 }

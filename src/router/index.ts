@@ -96,6 +96,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/AdminView.vue'),
         meta: { title: '管理台', roles: ['admin'] satisfies UserRole[] },
       },
+      {
+        path: 'admin/permissions',
+        name: 'admin-permissions',
+        component: () => import('../views/AdminPermissionView.vue'),
+        meta: { title: '权限中心', roles: ['admin'] satisfies UserRole[] },
+      },
     ],
   },
   {
